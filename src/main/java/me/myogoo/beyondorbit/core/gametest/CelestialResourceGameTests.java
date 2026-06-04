@@ -11,6 +11,7 @@ import me.myogoo.beyondorbit.core.celestial.CelestialResourceExtractor;
 import me.myogoo.beyondorbit.core.celestial.ResourceExtractionRequest;
 import me.myogoo.beyondorbit.core.celestial.ResourceExtractionResult;
 import me.myogoo.beyondorbit.core.data.BeyondOrbitSavedData;
+import me.myogoo.beyondorbit.core.menu.OrbitalReceiverMenu;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import me.myogoo.beyondorbit.core.satellite.SatelliteUplinkService;
@@ -147,6 +148,12 @@ public final class CelestialResourceGameTests {
         if (BeyondOrbitContent.ORBITAL_RECEIVER_BLOCK_ENTITY.get().getValidBlocks().isEmpty()) {
             throw new AssertionError("Expected orbital receiver block entity type to include at least one valid block");
         }
+        if (BeyondOrbitContent.SATELLITE_UPLINK_MENU.get() == null) {
+            throw new AssertionError("Expected satellite uplink menu type to be registered");
+        }
+        if (BeyondOrbitContent.ORBITAL_RECEIVER_MENU.get() == null) {
+            throw new AssertionError("Expected orbital receiver menu type to be registered");
+        }
 
         helper.succeed();
     }
@@ -240,6 +247,22 @@ public final class CelestialResourceGameTests {
         if (receiver.energyStored() <= 0) {
             throw new AssertionError("Expected Orbital Receiver to store FE from orbital solar panels");
         }
+
+        Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        OrbitalReceiverMenu menu = new OrbitalReceiverMenu(0, player.getInventory(), receiver);
+        if (menu.energy() != receiver.energyStored()) {
+            throw new AssertionError("Expected receiver menu energy to mirror block entity energy");
+        }
+        if (menu.storedItemCount() != receiver.storedItemCount()) {
+            throw new AssertionError("Expected receiver menu item count to mirror block entity item storage");
+        }
+        if (menu.occupiedSlots() != receiver.occupiedSlots()) {
+            throw new AssertionError("Expected receiver menu occupied slots to mirror block entity item storage");
+        }
+        if (menu.slotCount() != OrbitalReceiverBlockEntity.SLOT_COUNT) {
+            throw new AssertionError("Expected receiver menu to expose receiver slot capacity");
+        }
+
         if (!satellite.totalExtractedView().isEmpty() && receiver.storedItemCount() >= Config.orbitalReceiverMaxItemsPerTick) {
             // Partial pulls are allowed when the per-tick budget is reached.
             helper.succeed();

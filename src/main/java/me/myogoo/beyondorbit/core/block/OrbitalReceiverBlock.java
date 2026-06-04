@@ -4,6 +4,7 @@ import me.myogoo.beyondorbit.core.blockentity.OrbitalReceiverBlockEntity;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -33,8 +34,8 @@ public class OrbitalReceiverBlock extends Block implements EntityBlock {
             if (player.isShiftKeyDown()) {
                 int moved = receiver.collectToPlayer(player);
                 player.sendSystemMessage(Component.translatable("message.beyondorbit.orbital_receiver.collected", moved));
-            } else {
-                player.sendSystemMessage(receiver.statusMessage());
+            } else if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.openMenu(receiver, buffer -> buffer.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

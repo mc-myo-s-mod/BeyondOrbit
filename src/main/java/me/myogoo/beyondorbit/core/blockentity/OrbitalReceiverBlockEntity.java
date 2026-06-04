@@ -2,6 +2,7 @@ package me.myogoo.beyondorbit.core.blockentity;
 
 import me.myogoo.beyondorbit.core.Config;
 import me.myogoo.beyondorbit.core.data.BeyondOrbitSavedData;
+import me.myogoo.beyondorbit.core.menu.OrbitalReceiverMenu;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import net.minecraft.core.BlockPos;
@@ -11,7 +12,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,15 +27,43 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.EnergyStorage;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class OrbitalReceiverBlockEntity extends BlockEntity {
+public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvider {
     private static final String ITEMS_TAG = "items";
     private static final String ENERGY_TAG = "energy";
     public static final int SLOT_COUNT = 18;
+
+    private final ContainerData dataAccess = new ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> energyStored();
+                case 1 -> energyCapacity();
+                case 2 -> storedItemCount();
+                case 3 -> occupiedSlots();
+                case 4 -> SLOT_COUNT;
+                case 5 -> Config.orbitalReceiverSolarFePerTick;
+                case 6 -> Config.orbitalReceiverTransferFePerTick;
+                case 7 -> Config.orbitalReceiverMaxItemsPerTick;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+            // The receiver screen is read-only; mutations happen through block ticks and player actions.
+        }
+
+        @Override
+        public int getCount() {
+            return 8;
+        }
+    };
 
     private final ItemStackHandler items = new ItemStackHandler(SLOT_COUNT) {
         @Override
@@ -82,6 +115,10 @@ public class OrbitalReceiverBlockEntity extends BlockEntity {
 
     public IEnergyStorage energy() {
         return energy;
+    }
+
+    public ContainerData dataAccess() {
+        return dataAccess;
     }
 
     public int energyStored() {
@@ -255,5 +292,16 @@ public class OrbitalReceiverBlockEntity extends BlockEntity {
                 occupiedSlots(),
                 SLOT_COUNT
         );
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("menu.beyondorbit.orbital_receiver");
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new OrbitalReceiverMenu(containerId, playerInventory, this);
     }
 }
