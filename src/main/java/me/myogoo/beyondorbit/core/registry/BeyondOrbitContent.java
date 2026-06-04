@@ -6,6 +6,7 @@ import me.myogoo.beyondorbit.core.block.OrbitalReceiverBlock;
 import me.myogoo.beyondorbit.core.block.SatelliteUplinkBlock;
 import me.myogoo.beyondorbit.core.blockentity.OrbitalReceiverBlockEntity;
 import me.myogoo.beyondorbit.core.blockentity.SatelliteUplinkBlockEntity;
+import me.myogoo.beyondorbit.core.menu.LaunchPadMenu;
 import me.myogoo.beyondorbit.core.menu.OrbitalReceiverMenu;
 import me.myogoo.beyondorbit.core.menu.SatelliteUplinkMenu;
 import net.minecraft.core.registries.Registries;
@@ -81,6 +82,11 @@ public final class BeyondOrbitContent {
     public static final DeferredHolder<MenuType<?>, MenuType<OrbitalReceiverMenu>> ORBITAL_RECEIVER_MENU = MENU_TYPES.register(
             "orbital_receiver",
             () -> IMenuTypeExtension.create(OrbitalReceiverMenu::new)
+    );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<LaunchPadMenu>> LAUNCH_PAD_MENU = MENU_TYPES.register(
+            "launch_pad",
+            () -> IMenuTypeExtension.create(LaunchPadMenu::new)
     );
 
     public static final DeferredItem<BlockItem> SATELLITE_UPLINK_ITEM = ITEMS.registerSimpleBlockItem(SATELLITE_UPLINK, new Item.Properties());

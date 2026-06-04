@@ -11,6 +11,7 @@ import me.myogoo.beyondorbit.core.celestial.CelestialResourceExtractor;
 import me.myogoo.beyondorbit.core.celestial.ResourceExtractionRequest;
 import me.myogoo.beyondorbit.core.celestial.ResourceExtractionResult;
 import me.myogoo.beyondorbit.core.data.BeyondOrbitSavedData;
+import me.myogoo.beyondorbit.core.menu.LaunchPadMenu;
 import me.myogoo.beyondorbit.core.menu.OrbitalReceiverMenu;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
@@ -153,6 +154,9 @@ public final class CelestialResourceGameTests {
         }
         if (BeyondOrbitContent.ORBITAL_RECEIVER_MENU.get() == null) {
             throw new AssertionError("Expected orbital receiver menu type to be registered");
+        }
+        if (BeyondOrbitContent.LAUNCH_PAD_MENU.get() == null) {
+            throw new AssertionError("Expected launch pad menu type to be registered");
         }
 
         helper.succeed();
@@ -305,6 +309,44 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected launch pad to create satellite " + satelliteId));
         if (!satellite.active()) {
             throw new AssertionError("Expected launch pad satellite to start an active mission");
+        }
+
+        LaunchPadMenu launchPadMenu = new LaunchPadMenu(0, player.getInventory(), helper.getLevel(), helper.absolutePos(padPos));
+        if (!launchPadMenu.hasSatellite()) {
+            throw new AssertionError("Expected Launch Pad menu to detect the linked satellite");
+        }
+        if (!launchPadMenu.active()) {
+            throw new AssertionError("Expected Launch Pad menu to mirror the active satellite state");
+        }
+        if (launchPadMenu.rollsPerExtraction() != satellite.rollsPerExtraction()) {
+            throw new AssertionError("Expected Launch Pad menu to mirror mission rolls");
+        }
+        if (launchPadMenu.ticksPerExtraction() != satellite.ticksPerExtraction()) {
+            throw new AssertionError("Expected Launch Pad menu to mirror mission interval");
+        }
+
+        satellite.startMining(bodyId, Config.maxExtractionRollsPerOperation, 1);
+        for (int i = 0; i < 20 && satellite.totalExtractedView().isEmpty(); i++) {
+            satellite.tick(definition, savedData.getOrCreateState(definition), RandomSource.create(5000L + i));
+        }
+        if (satellite.totalExtractedView().isEmpty()) {
+            throw new AssertionError("Expected launch pad satellite to buffer resources after ticking");
+        }
+        Map<ResourceLocation, Long> minedBeforeCollect = Map.copyOf(satellite.totalExtractedView());
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.setShiftKeyDown(true);
+        helper.useBlock(padPos, player);
+        player.setShiftKeyDown(false);
+        if (!satellite.totalExtractedView().isEmpty()) {
+            throw new AssertionError("Expected sneak empty-hand Launch Pad use to drain linked satellite buffer");
+        }
+        boolean collectedAnyMinedResource = minedBeforeCollect.keySet().stream()
+                .map(BuiltInRegistries.ITEM::get)
+                .filter(item -> item != net.minecraft.world.item.Items.AIR)
+                .anyMatch(item -> player.getInventory().contains(new ItemStack(item)));
+        if (!collectedAnyMinedResource) {
+            throw new AssertionError("Expected Launch Pad collected resources to reach the player's inventory");
         }
 
         helper.succeed();

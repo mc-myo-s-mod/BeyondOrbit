@@ -1,11 +1,16 @@
 package me.myogoo.beyondorbit.core.block;
 
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
+import me.myogoo.beyondorbit.core.menu.LaunchPadMenu;
 import me.myogoo.beyondorbit.core.satellite.SatelliteUplinkService;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -28,5 +33,23 @@ public class LaunchPadBlock extends Block {
             return launched ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
         }
         return ItemInteractionResult.sidedSuccess(true);
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (!level.isClientSide()) {
+            if (player.isShiftKeyDown()) {
+                SatelliteUplinkService.collectLaunchPadResources(level, pos, player);
+            } else if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.openMenu(
+                        new SimpleMenuProvider(
+                                (containerId, inventory, menuPlayer) -> new LaunchPadMenu(containerId, inventory, level, pos),
+                                Component.translatable("menu.beyondorbit.launch_pad")
+                        ),
+                        buffer -> buffer.writeBlockPos(pos)
+                );
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 }

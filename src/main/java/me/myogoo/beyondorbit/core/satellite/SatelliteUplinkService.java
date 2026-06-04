@@ -129,10 +129,47 @@ public final class SatelliteUplinkService {
         }
 
         ResourceLocation satelliteId = satelliteIdFor(level, pos);
+        return collectResources(serverLevel, satelliteId, player, "message.beyondorbit.uplink.no_satellite");
+    }
+
+    public static int collectLaunchPadResources(Level level, BlockPos pos, Player player) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return 0;
+        }
+
+        ResourceLocation satelliteId = launchPadSatelliteIdFor(level, pos);
+        return collectResources(serverLevel, satelliteId, player, "message.beyondorbit.launch_pad.no_satellite");
+    }
+
+    public static boolean reportLaunchPadStatus(Level level, BlockPos pos, Player player) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return true;
+        }
+
+        ResourceLocation satelliteId = launchPadSatelliteIdFor(level, pos);
         BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
         SatelliteMiningMissionState satellite = data.getSatellite(satelliteId).orElse(null);
         if (satellite == null) {
-            player.sendSystemMessage(Component.translatable("message.beyondorbit.uplink.no_satellite", satelliteId.toString()));
+            player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.no_satellite", satelliteId.toString()));
+            return false;
+        }
+
+        player.sendSystemMessage(Component.translatable(
+                "message.beyondorbit.launch_pad.status",
+                satelliteId.toString(),
+                satellite.targetBody() == null ? "<none>" : satellite.targetBody().toString(),
+                satellite.completedExtractions(),
+                satellite.ticksUntilNextExtraction(),
+                satellite.totalExtractedView().values().stream().mapToLong(Long::longValue).sum()
+        ));
+        return true;
+    }
+
+    private static int collectResources(ServerLevel serverLevel, ResourceLocation satelliteId, Player player, String noSatelliteKey) {
+        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
+        SatelliteMiningMissionState satellite = data.getSatellite(satelliteId).orElse(null);
+        if (satellite == null) {
+            player.sendSystemMessage(Component.translatable(noSatelliteKey, satelliteId.toString()));
             return 0;
         }
 
