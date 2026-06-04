@@ -81,6 +81,8 @@ Receiver는 서버 틱마다 다음 일을 합니다.
 2. Basic Satellite를 들고 Launch Pad를 우클릭합니다.
 3. 인벤토리에 Rocket Frame과 Orbital Mining Module이 있으면 함께 소모됩니다.
 4. 발사대 위치 기반 위성 미션이 시작됩니다.
+5. 빈손 우클릭으로 발사 위성 상태 화면을 엽니다.
+6. Shift + 빈손 우클릭으로 발사 위성이 모은 자원을 수거합니다.
 
 기본값:
 

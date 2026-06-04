@@ -82,12 +82,20 @@ item_ids:
 - Basic Satellite를 실제 발사 payload로 사용
 - Rocket Frame과 Orbital Mining Module을 함께 소모
 - Uplink보다 더 많은 roll과 짧은 interval로 채굴 미션 시작
+- 연결된 발사 위성의 상태 화면 제공
+- 발사 위성 버퍼 수거
 
 필요한 재료:
 
 - <ItemLink id="beyondorbit:basic_satellite" />
 - <ItemLink id="beyondorbit:rocket_frame" />
 - <ItemLink id="beyondorbit:orbital_mining_module" />
+
+조작:
+
+- Basic Satellite 들고 우클릭: 발사 미션 시작
+- 빈손 우클릭: 발사대 상태 화면 열기
+- Shift + 빈손 우클릭: 발사 위성 자원 수거
 
 <RecipesFor id="beyondorbit:launch_pad" />
 
@@ -102,11 +110,12 @@ item_ids:
 - 위성이 채굴해 SavedData 버퍼에 쌓아 둔 광물을 내부 아이템 버퍼로 수신
 - 궤도 Solar Panel에서 내려오는 FE를 내부 에너지 버퍼에 저장
 - 인접한 FE 소비 기계로 에너지 자동 출력
-- Hopper나 다른 item handler가 아이템을 꺼낼 수 있도록 item capability 제공
+- Hopper나 다른 아이템 핸들러가 아이템을 꺼낼 수 있도록 item capability 제공
 
 조작:
 
-- 빈손 우클릭: 저장 FE와 아이템 상태 확인
+- 빈손 우클릭: 저장 FE와 아이템 상태 화면 열기
+- 화면에서 저장 FE, 슬롯 사용량, 수신 속도, 전송 속도 확인
 - Shift + 빈손 우클릭: 내부 아이템을 플레이어 인벤토리로 수거
 
 <RecipesFor id="beyondorbit:orbital_receiver" />
