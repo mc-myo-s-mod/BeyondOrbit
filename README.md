@@ -11,6 +11,7 @@ Beyond Orbit: Core is a NeoForge 1.21.1 mod that turns celestial bodies into dat
 5. Let the `Satellite Uplink` charge passively, then right-click it while holding a `Basic Satellite` to deploy a location-bound mining satellite.
 6. Empty-hand right-click opens the Uplink status screen; sneak + empty-hand right-click collects accumulated resources.
 7. For a heavier launch-pad mission, craft a `Rocket Frame`, `Orbital Mining Module`, and `Launch Pad`, then use a `Basic Satellite` on the pad.
+8. Empty-hand right-click the `Launch Pad` to open its mission status screen; sneak + empty-hand right-click collects the launch satellite buffer.
 
 ## Commands
 
@@ -71,7 +72,7 @@ Beyond Orbit
 → Launch Infrastructure
 ```
 
-These are intentionally lightweight. They teach the loop without forcing a quest-book dependency, while the Uplink screen exposes machine status in-game.
+These are intentionally lightweight. They teach the loop without forcing a quest-book dependency, while the Uplink, Launch Pad, and Receiver screens expose machine status in-game.
 
 ## Server Config
 
@@ -104,6 +105,8 @@ The current implementation is covered by GameTests for:
 - satellite mission ticking and accumulation
 - playable content registration and mining tags
 - Satellite Uplink deploy/mine/collect interaction
+- Launch Pad mission status menu and collect interaction
+- Orbital Receiver status data mirroring
 
 Useful verification commands:
 
