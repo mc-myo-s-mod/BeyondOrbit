@@ -1,0 +1,25 @@
+{
+  "parent": "beyondorbit:root",
+  "display": {
+    "icon": {
+      "id": "beyondorbit:basic_satellite"
+    },
+    "title": "First Satellite",
+    "description": "Craft a Basic Satellite for a Satellite Uplink mission.",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "has_satellite": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:basic_satellite"
+          }
+        ]
+      }
+    }
+  }
+}

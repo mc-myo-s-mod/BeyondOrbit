@@ -1,0 +1,25 @@
+{
+  "parent": "beyondorbit:orbital_uplink",
+  "display": {
+    "icon": {
+      "id": "beyondorbit:launch_pad"
+    },
+    "title": "Launch Infrastructure",
+    "description": "Craft a Launch Pad, Rocket Frame, and Orbital Mining Module for heavier satellite missions.",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "has_launch_pad": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:launch_pad"
+          }
+        ]
+      }
+    }
+  }
+}

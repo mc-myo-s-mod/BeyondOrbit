@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " I ",
+    "ICI",
+    " I "
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "C": { "item": "beyondorbit:orbital_data_core" }
+  },
+  "result": {
+    "id": "beyondorbit:rocket_frame",
+    "count": 1
+  }
+}

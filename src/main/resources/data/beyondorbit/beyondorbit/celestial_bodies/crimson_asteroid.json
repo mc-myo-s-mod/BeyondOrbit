@@ -1,0 +1,22 @@
+{
+  "id": "beyondorbit:crimson_asteroid",
+  "type": "asteroid",
+  "resource_mode": "finite",
+  "tier": 4,
+  "resources": [
+    {
+      "id": "minecraft:iron_ore",
+      "amount": 250000,
+      "weight": 40,
+      "min_yield": 32,
+      "max_yield": 96
+    },
+    {
+      "id": "minecraft:diamond",
+      "amount": 3200,
+      "weight": 3,
+      "min_yield": 1,
+      "max_yield": 4
+    }
+  ]
+}

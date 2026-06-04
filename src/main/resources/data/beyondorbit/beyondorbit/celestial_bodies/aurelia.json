@@ -1,0 +1,23 @@
+{
+  "id": "beyondorbit:aurelia",
+  "type": "planet",
+  "resource_mode": "config_default",
+  "tier": 6,
+  "resources": [
+    {
+      "id": "minecraft:copper_ore",
+      "amount": 5000000,
+      "weight": 35,
+      "min_yield": 64,
+      "max_yield": 192
+    },
+    {
+      "id": "minecraft:redstone",
+      "mode": "finite",
+      "amount": 850000,
+      "weight": 12,
+      "min_yield": 24,
+      "max_yield": 80
+    }
+  ]
+}

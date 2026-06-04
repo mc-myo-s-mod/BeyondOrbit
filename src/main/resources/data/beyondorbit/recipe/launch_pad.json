@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "III",
+    "RCR",
+    "SSS"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "R": { "item": "minecraft:redstone" },
+    "C": { "item": "beyondorbit:orbital_data_core" },
+    "S": { "item": "minecraft:smooth_stone" }
+  },
+  "result": {
+    "id": "beyondorbit:launch_pad",
+    "count": 1
+  }
+}

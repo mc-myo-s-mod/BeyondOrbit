@@ -1,0 +1,25 @@
+{
+  "parent": "beyondorbit:first_satellite",
+  "display": {
+    "icon": {
+      "id": "beyondorbit:satellite_uplink"
+    },
+    "title": "Orbital Uplink",
+    "description": "Craft and place a Satellite Uplink to deploy satellites from the ground.",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "has_uplink": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:satellite_uplink"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CRC",
+    "RDR",
+    "CHC"
+  ],
+  "key": {
+    "C": { "item": "minecraft:copper_ingot" },
+    "R": { "item": "minecraft:redstone" },
+    "D": { "item": "beyondorbit:orbital_data_core" },
+    "H": { "item": "minecraft:hopper" }
+  },
+  "result": {
+    "id": "beyondorbit:orbital_receiver",
+    "count": 1
+  }
+}

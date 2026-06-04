@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RDR",
+    "DCD",
+    "RDR"
+  ],
+  "key": {
+    "R": { "item": "minecraft:redstone" },
+    "D": { "item": "minecraft:deepslate" },
+    "C": { "item": "beyondorbit:orbital_data_core" }
+  },
+  "result": {
+    "id": "beyondorbit:orbital_mining_module",
+    "count": 1
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "display": {
+    "icon": {
+      "id": "beyondorbit:orbital_data_core"
+    },
+    "title": "Beyond Orbit",
+    "description": "Begin building a quiet orbital resource network.",
+    "background": "minecraft:textures/block/deepslate.png",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "has_core": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:orbital_data_core"
+          }
+        ]
+      }
+    }
+  }
+}
