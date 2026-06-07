@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "beyondorbit:block/satellite_monitor" }
+  }
+}

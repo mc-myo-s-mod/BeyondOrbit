@@ -3,6 +3,9 @@
   "values": [
     "beyondorbit:satellite_uplink",
     "beyondorbit:launch_pad",
-    "beyondorbit:orbital_receiver"
+    "beyondorbit:orbital_receiver",
+    "beyondorbit:item_receiver",
+    "beyondorbit:satellite_monitor",
+    "beyondorbit:module_assembler"
   ]
 }
