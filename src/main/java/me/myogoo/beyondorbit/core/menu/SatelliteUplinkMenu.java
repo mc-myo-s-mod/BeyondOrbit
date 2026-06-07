@@ -1,6 +1,7 @@
 package me.myogoo.beyondorbit.core.menu;
 
 import me.myogoo.beyondorbit.core.blockentity.SatelliteUplinkBlockEntity;
+import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -22,6 +23,9 @@ public class SatelliteUplinkMenu extends AbstractContainerMenu {
     private final String targetBody;
     private final long completedExtractions;
     private final int bufferedResourceTypes;
+    private final int miningModuleLevel;
+    private final int speedModuleLevel;
+    private final int efficiencyModuleLevel;
 
     public SatelliteUplinkMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buffer) {
         this(containerId, playerInventory, findBlockEntity(playerInventory, buffer.readBlockPos()));
@@ -38,6 +42,9 @@ public class SatelliteUplinkMenu extends AbstractContainerMenu {
         this.targetBody = satellite == null || satellite.targetBody() == null ? "<none>" : satellite.targetBody().toString();
         this.completedExtractions = satellite == null ? 0L : satellite.completedExtractions();
         this.bufferedResourceTypes = satellite == null ? 0 : satellite.totalExtractedView().size();
+        this.miningModuleLevel = satellite == null ? 0 : satellite.equippedModuleTierLevel(OrbitalModuleType.MINING);
+        this.speedModuleLevel = satellite == null ? 0 : satellite.equippedModuleTierLevel(OrbitalModuleType.SPEED);
+        this.efficiencyModuleLevel = satellite == null ? 0 : satellite.equippedModuleTierLevel(OrbitalModuleType.EFFICIENCY);
         addDataSlots(data);
     }
 
@@ -83,6 +90,18 @@ public class SatelliteUplinkMenu extends AbstractContainerMenu {
 
     public int bufferedResourceTypes() {
         return bufferedResourceTypes;
+    }
+
+    public int miningModuleLevel() {
+        return miningModuleLevel;
+    }
+
+    public int speedModuleLevel() {
+        return speedModuleLevel;
+    }
+
+    public int efficiencyModuleLevel() {
+        return efficiencyModuleLevel;
     }
 
     @Override

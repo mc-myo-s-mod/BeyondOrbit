@@ -9,10 +9,13 @@ import me.myogoo.beyondorbit.core.celestial.ResourceExtractionResult;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import me.myogoo.beyondorbit.core.module.OrbitalModuleTier;
+import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -25,6 +28,9 @@ public final class SatelliteMiningMissionState {
     private static final String ROLLS_PER_EXTRACTION_TAG = "rolls_per_extraction";
     private static final String COMPLETED_EXTRACTIONS_TAG = "completed_extractions";
     private static final String TOTAL_EXTRACTED_TAG = "total_extracted";
+    private static final String EQUIPPED_MODULES_TAG = "equipped_modules";
+    private static final String MODULE_TYPE_TAG = "type";
+    private static final String MODULE_TIER_TAG = "tier";
     private static final String RESOURCE_ID_TAG = "id";
     private static final String AMOUNT_TAG = "amount";
 
@@ -36,6 +42,7 @@ public final class SatelliteMiningMissionState {
     private int rollsPerExtraction = 1;
     private long completedExtractions;
     private final Map<ResourceLocation, Long> totalExtracted = new LinkedHashMap<>();
+    private final EnumMap<OrbitalModuleType, OrbitalModuleTier> equippedModules = new EnumMap<>(OrbitalModuleType.class);
 
     public SatelliteMiningMissionState(ResourceLocation satelliteId) {
         this.satelliteId = satelliteId;
@@ -59,6 +66,16 @@ public final class SatelliteMiningMissionState {
             long amount = Math.max(0L, resourceTag.getLong(AMOUNT_TAG));
             if (amount > 0L) {
                 state.totalExtracted.put(resourceId, amount);
+            }
+        }
+
+        ListTag modules = tag.getList(EQUIPPED_MODULES_TAG, Tag.TAG_COMPOUND);
+        for (int i = 0; i < modules.size(); i++) {
+            CompoundTag moduleTag = modules.getCompound(i);
+            OrbitalModuleType type = OrbitalModuleType.bySerializedName(moduleTag.getString(MODULE_TYPE_TAG));
+            OrbitalModuleTier tier = OrbitalModuleTier.bySerializedName(moduleTag.getString(MODULE_TIER_TAG));
+            if (type != null && tier != null) {
+                state.equippedModules.put(type, tier);
             }
         }
         return state;
@@ -86,6 +103,15 @@ public final class SatelliteMiningMissionState {
             }
         });
         tag.put(TOTAL_EXTRACTED_TAG, totals);
+
+        ListTag modules = new ListTag();
+        equippedModules.forEach((type, tier) -> {
+            CompoundTag moduleTag = new CompoundTag();
+            moduleTag.putString(MODULE_TYPE_TAG, type.serializedName());
+            moduleTag.putString(MODULE_TIER_TAG, tier.serializedName());
+            modules.add(moduleTag);
+        });
+        tag.put(EQUIPPED_MODULES_TAG, modules);
         return tag;
     }
 
@@ -99,6 +125,26 @@ public final class SatelliteMiningMissionState {
 
     public void stopMining() {
         this.active = false;
+    }
+
+    public OrbitalModuleTier equipModule(OrbitalModuleType type, OrbitalModuleTier tier) {
+        if (type == null || tier == null) {
+            return null;
+        }
+        return equippedModules.put(type, tier);
+    }
+
+    public OrbitalModuleTier equippedModuleTier(OrbitalModuleType type) {
+        return equippedModules.get(type);
+    }
+
+    public int equippedModuleTierLevel(OrbitalModuleType type) {
+        OrbitalModuleTier tier = equippedModuleTier(type);
+        return tier == null ? 0 : tier.level();
+    }
+
+    public Map<OrbitalModuleType, OrbitalModuleTier> equippedModulesView() {
+        return Collections.unmodifiableMap(equippedModules);
     }
 
     public void clearExtracted() {

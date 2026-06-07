@@ -16,7 +16,7 @@ public class LaunchPadScreen extends AbstractContainerScreen<LaunchPadMenu> {
     public LaunchPadScreen(LaunchPadMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 210;
-        this.imageHeight = 148;
+        this.imageHeight = 160;
         this.inventoryLabelY = 10_000;
     }
 
@@ -40,7 +40,8 @@ public class LaunchPadScreen extends AbstractContainerScreen<LaunchPadMenu> {
         graphics.drawString(font, Component.translatable("screen.beyondorbit.launch_pad.extractions", menu.completedExtractions(), menu.ticksUntilNextExtraction()), 12, 76, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.launch_pad.buffer", menu.bufferedItemCount(), menu.bufferedResourceTypes()), 12, 96, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.launch_pad.mission", menu.rollsPerExtraction(), menu.ticksPerExtraction()), 12, 108, 0xFFB9C7D8, false);
-        graphics.drawString(font, Component.translatable("screen.beyondorbit.launch_pad.collect_hint"), 12, 130, 0xFF7F91A7, false);
+        graphics.drawString(font, Component.translatable("screen.beyondorbit.modules", menu.miningModuleLevel(), menu.speedModuleLevel(), menu.efficiencyModuleLevel()), 12, 120, 0xFFB9C7D8, false);
+        graphics.drawString(font, Component.translatable("screen.beyondorbit.launch_pad.collect_hint"), 12, 142, 0xFF7F91A7, false);
     }
 
     @EventBusSubscriber(modid = BeyondOrbitCore.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)

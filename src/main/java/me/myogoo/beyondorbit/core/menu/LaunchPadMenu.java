@@ -2,6 +2,7 @@ package me.myogoo.beyondorbit.core.menu;
 
 import me.myogoo.beyondorbit.core.data.BeyondOrbitSavedData;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
+import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import me.myogoo.beyondorbit.core.satellite.SatelliteUplinkService;
 import net.minecraft.core.BlockPos;
@@ -18,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public class LaunchPadMenu extends AbstractContainerMenu {
-    private static final int DATA_COUNT = 8;
+    private static final int DATA_COUNT = 11;
 
     private final ContainerLevelAccess access;
     private final ContainerData data;
@@ -58,6 +59,9 @@ public class LaunchPadMenu extends AbstractContainerMenu {
                     case 5 -> satellite == null ? 0 : clampLongToInt(satellite.totalExtractedView().values().stream().mapToLong(Long::longValue).sum());
                     case 6 -> satellite == null ? 0 : satellite.rollsPerExtraction();
                     case 7 -> satellite == null ? 0 : satellite.ticksPerExtraction();
+                    case 8 -> satellite == null ? 0 : satellite.equippedModuleTierLevel(OrbitalModuleType.MINING);
+                    case 9 -> satellite == null ? 0 : satellite.equippedModuleTierLevel(OrbitalModuleType.SPEED);
+                    case 10 -> satellite == null ? 0 : satellite.equippedModuleTierLevel(OrbitalModuleType.EFFICIENCY);
                     default -> 0;
                 };
             }
@@ -115,6 +119,18 @@ public class LaunchPadMenu extends AbstractContainerMenu {
 
     public int ticksPerExtraction() {
         return data.get(7);
+    }
+
+    public int miningModuleLevel() {
+        return data.get(8);
+    }
+
+    public int speedModuleLevel() {
+        return data.get(9);
+    }
+
+    public int efficiencyModuleLevel() {
+        return data.get(10);
     }
 
     @Override

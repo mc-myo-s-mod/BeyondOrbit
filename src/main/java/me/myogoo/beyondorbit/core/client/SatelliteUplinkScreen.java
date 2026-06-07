@@ -16,7 +16,7 @@ public class SatelliteUplinkScreen extends AbstractContainerScreen<SatelliteUpli
     public SatelliteUplinkScreen(SatelliteUplinkMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 196;
-        this.imageHeight = 136;
+        this.imageHeight = 148;
         this.inventoryLabelY = 10_000;
     }
 
@@ -40,7 +40,8 @@ public class SatelliteUplinkScreen extends AbstractContainerScreen<SatelliteUpli
         graphics.drawString(font, Component.translatable("screen.beyondorbit.uplink.satellite", menu.satelliteIdText()), 12, 84, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.uplink.target", menu.targetBody()), 12, 96, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.uplink.extractions", menu.completedExtractions(), menu.bufferedResourceTypes()), 12, 108, 0xFFB9C7D8, false);
-        graphics.drawString(font, Component.translatable("screen.beyondorbit.uplink.collect_hint"), 12, 122, 0xFF7F91A7, false);
+        graphics.drawString(font, Component.translatable("screen.beyondorbit.modules", menu.miningModuleLevel(), menu.speedModuleLevel(), menu.efficiencyModuleLevel()), 12, 120, 0xFFB9C7D8, false);
+        graphics.drawString(font, Component.translatable("screen.beyondorbit.uplink.collect_hint"), 12, 134, 0xFF7F91A7, false);
     }
 
     @EventBusSubscriber(modid = BeyondOrbitCore.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)

@@ -2,6 +2,7 @@ package me.myogoo.beyondorbit.core.block;
 
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import me.myogoo.beyondorbit.core.menu.LaunchPadMenu;
+import me.myogoo.beyondorbit.core.module.OrbitalModuleItem;
 import me.myogoo.beyondorbit.core.satellite.SatelliteUplinkService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -25,6 +26,13 @@ public class LaunchPadBlock extends Block {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (stack.getItem() instanceof OrbitalModuleItem) {
+            if (!level.isClientSide()) {
+                boolean equipped = SatelliteUplinkService.equipLaunchPadModule(level, pos, player, stack);
+                return equipped ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+            }
+            return ItemInteractionResult.sidedSuccess(true);
+        }
         if (!stack.is(BeyondOrbitContent.BASIC_SATELLITE.get())) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
