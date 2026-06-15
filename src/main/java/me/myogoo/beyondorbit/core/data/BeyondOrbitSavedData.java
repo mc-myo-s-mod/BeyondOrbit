@@ -110,9 +110,18 @@ public final class BeyondOrbitSavedData extends SavedData {
         return Collections.unmodifiableCollection(satellites.values());
     }
 
+    public int lowOrbitSolarSatelliteCount() {
+        return (int) satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isLowOrbitSolar)
+                .count();
+    }
+
     public int tickSatellites(RandomSource random) {
         int activeExtractions = 0;
         for (SatelliteMiningMissionState satellite : satellites.values()) {
+            if (satellite.isLowOrbitSolar()) {
+                continue;
+            }
             if (!satellite.active() || satellite.targetBody() == null) {
                 continue;
             }

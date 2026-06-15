@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RGR",
+    "GCG",
+    "RGR"
+  ],
+  "key": {
+    "R": { "item": "minecraft:redstone" },
+    "G": { "item": "minecraft:gold_nugget" },
+    "C": { "item": "beyondorbit:orbital_data_core" }
+  },
+  "result": {
+    "id": "beyondorbit:basic_speed_module",
+    "count": 1
+  }
+}

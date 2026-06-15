@@ -33,14 +33,21 @@ public class LaunchPadBlock extends Block {
             }
             return ItemInteractionResult.sidedSuccess(true);
         }
-        if (!stack.is(BeyondOrbitContent.BASIC_SATELLITE.get())) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (stack.is(BeyondOrbitContent.LOW_ORBIT_SOLAR_SATELLITE.get())) {
+            if (!level.isClientSide()) {
+                boolean launched = SatelliteUplinkService.launchLowOrbitSolarSatelliteFromPad(level, pos, player, stack);
+                return launched ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+            }
+            return ItemInteractionResult.sidedSuccess(true);
         }
-        if (!level.isClientSide()) {
-            boolean launched = SatelliteUplinkService.launchSatelliteFromPad(level, pos, player, stack);
-            return launched ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+        if (stack.is(BeyondOrbitContent.BASIC_SATELLITE.get())) {
+            if (!level.isClientSide()) {
+                boolean launched = SatelliteUplinkService.launchSatelliteFromPad(level, pos, player, stack);
+                return launched ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+            }
+            return ItemInteractionResult.sidedSuccess(true);
         }
-        return ItemInteractionResult.sidedSuccess(true);
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     @Override

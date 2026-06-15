@@ -7,6 +7,7 @@ categories:
   - beyondorbit
 item_ids:
   - basic_satellite
+  - low_orbit_solar_satellite
   - satellite_uplink
   - launch_pad
   - orbital_receiver
@@ -62,6 +63,19 @@ Receiver는 서버 틱마다 다음 일을 합니다.
 - 궤도 Solar Panel 수신량: 80 FE/t
 - 인접 기계 출력: 1024 FE/t
 - 광물 수신량: 64 item/t
+
+## 저궤도 태양광 위성
+
+<ItemImage id="beyondorbit:low_orbit_solar_satellite" scale={3}/>
+
+<ItemLink id="beyondorbit:low_orbit_solar_satellite" />은 채굴 미션 대신 궤도 태양광 발전량을 늘리는 위성입니다.
+
+사용법:
+
+1. Launch Pad와 Rocket Frame을 준비합니다.
+2. Low Orbit Solar Satellite를 들고 Launch Pad를 우클릭합니다.
+3. 발사에 성공하면 서버 월드의 태양광 위성 수가 증가합니다.
+4. Orbital Receiver는 발사된 태양광 위성 수에 따라 FE 생산량을 받습니다.
 
 ## Launch Pad 루프
 

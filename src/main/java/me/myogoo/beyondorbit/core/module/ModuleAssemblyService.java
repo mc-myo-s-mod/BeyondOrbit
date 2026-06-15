@@ -35,19 +35,6 @@ public final class ModuleAssemblyService {
         };
     }
 
-    public static Optional<OrbitalModuleTier> bestAvailableTier(Player player) {
-        if (hasItem(player, tierMaterial(OrbitalModuleTier.ELITE))) {
-            return Optional.of(OrbitalModuleTier.ELITE);
-        }
-        if (hasItem(player, tierMaterial(OrbitalModuleTier.ADVANCED))) {
-            return Optional.of(OrbitalModuleTier.ADVANCED);
-        }
-        if (hasItem(player, tierMaterial(OrbitalModuleTier.BASIC))) {
-            return Optional.of(OrbitalModuleTier.BASIC);
-        }
-        return Optional.empty();
-    }
-
     public static Item moduleItem(OrbitalModuleType type, OrbitalModuleTier tier) {
         return switch (type) {
             case MINING -> switch (tier) {
@@ -78,13 +65,7 @@ public final class ModuleAssemblyService {
             player.sendSystemMessage(Component.translatable("message.beyondorbit.module_assembler.missing_core"));
             return false;
         }
-        Optional<OrbitalModuleTier> tier = bestAvailableTier(player);
-        if (tier.isEmpty()) {
-            player.sendSystemMessage(Component.translatable("message.beyondorbit.module_assembler.missing_tier_material"));
-            return false;
-        }
-
-        OrbitalModuleTier selectedTier = tier.get();
+        OrbitalModuleTier selectedTier = OrbitalModuleTier.BASIC;
         if (!player.getAbilities().instabuild) {
             if (!consumeCatalyst(player, catalystStack)) {
                 return false;
@@ -96,6 +77,7 @@ public final class ModuleAssemblyService {
             if (!consumeOne(player, tierMaterial(selectedTier))) {
                 player.getInventory().add(catalystStack.copyWithCount(1));
                 player.getInventory().add(new ItemStack(BeyondOrbitContent.ORBITAL_DATA_CORE.get()));
+                player.sendSystemMessage(Component.translatable("message.beyondorbit.module_assembler.missing_basic_material"));
                 return false;
             }
             player.getInventory().setChanged();

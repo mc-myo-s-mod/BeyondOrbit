@@ -1,0 +1,29 @@
+{
+  "id": "beyondorbit:void_maw",
+  "type": "asteroid",
+  "resource_mode": "finite",
+  "tier": 10,
+  "resources": [
+    {
+      "id": "beyondorbit:singularity_matrix",
+      "amount": 4096,
+      "weight": 2,
+      "min_yield": 1,
+      "max_yield": 2
+    },
+    {
+      "id": "minecraft:netherite_scrap",
+      "amount": 8192,
+      "weight": 4,
+      "min_yield": 1,
+      "max_yield": 3
+    },
+    {
+      "id": "minecraft:echo_shard",
+      "amount": 16384,
+      "weight": 8,
+      "min_yield": 1,
+      "max_yield": 4
+    }
+  ]
+}

@@ -21,6 +21,7 @@ import java.util.Map;
 
 public final class SatelliteMiningMissionState {
     private static final String SATELLITE_ID_TAG = "satellite_id";
+    private static final String KIND_TAG = "kind";
     private static final String TARGET_BODY_TAG = "target_body";
     private static final String ACTIVE_TAG = "active";
     private static final String TICKS_UNTIL_NEXT_EXTRACTION_TAG = "ticks_until_next_extraction";
@@ -34,7 +35,32 @@ public final class SatelliteMiningMissionState {
     private static final String RESOURCE_ID_TAG = "id";
     private static final String AMOUNT_TAG = "amount";
 
+    public enum SatelliteKind {
+        MINING("mining"),
+        LOW_ORBIT_SOLAR("low_orbit_solar");
+
+        private final String serializedName;
+
+        SatelliteKind(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        public String serializedName() {
+            return serializedName;
+        }
+
+        public static SatelliteKind bySerializedName(String serializedName) {
+            for (SatelliteKind kind : values()) {
+                if (kind.serializedName.equals(serializedName)) {
+                    return kind;
+                }
+            }
+            return null;
+        }
+    }
+
     private final ResourceLocation satelliteId;
+    private SatelliteKind kind = SatelliteKind.MINING;
     private ResourceLocation targetBody;
     private boolean active;
     private int ticksUntilNextExtraction;
@@ -50,6 +76,12 @@ public final class SatelliteMiningMissionState {
 
     public static SatelliteMiningMissionState load(CompoundTag tag) {
         SatelliteMiningMissionState state = new SatelliteMiningMissionState(ResourceLocation.parse(tag.getString(SATELLITE_ID_TAG)));
+        if (tag.contains(KIND_TAG, Tag.TAG_STRING)) {
+            SatelliteKind kind = SatelliteKind.bySerializedName(tag.getString(KIND_TAG));
+            if (kind != null) {
+                state.kind = kind;
+            }
+        }
         if (tag.contains(TARGET_BODY_TAG, Tag.TAG_STRING)) {
             state.targetBody = ResourceLocation.parse(tag.getString(TARGET_BODY_TAG));
         }
@@ -84,6 +116,7 @@ public final class SatelliteMiningMissionState {
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putString(SATELLITE_ID_TAG, satelliteId.toString());
+        tag.putString(KIND_TAG, kind.serializedName());
         if (targetBody != null) {
             tag.putString(TARGET_BODY_TAG, targetBody.toString());
         }
@@ -116,6 +149,7 @@ public final class SatelliteMiningMissionState {
     }
 
     public void startMining(ResourceLocation targetBody, int rollsPerExtraction, int ticksPerExtraction) {
+        this.kind = SatelliteKind.MINING;
         this.targetBody = targetBody;
         this.rollsPerExtraction = Math.max(1, rollsPerExtraction);
         this.ticksPerExtraction = Math.max(1, ticksPerExtraction);
@@ -125,6 +159,21 @@ public final class SatelliteMiningMissionState {
 
     public void stopMining() {
         this.active = false;
+    }
+
+    public void markLowOrbitSolar() {
+        this.kind = SatelliteKind.LOW_ORBIT_SOLAR;
+        this.targetBody = null;
+        this.active = false;
+        this.ticksUntilNextExtraction = 0;
+    }
+
+    public boolean isLowOrbitSolar() {
+        return kind == SatelliteKind.LOW_ORBIT_SOLAR;
+    }
+
+    public SatelliteKind kind() {
+        return kind;
     }
 
     public OrbitalModuleTier equipModule(OrbitalModuleType type, OrbitalModuleTier tier) {
@@ -170,6 +219,9 @@ public final class SatelliteMiningMissionState {
     }
 
     public ResourceExtractionResult tick(CelestialBodyDefinition definition, CelestialBodyState bodyState, RandomSource random) {
+        if (isLowOrbitSolar()) {
+            return ResourceExtractionResult.EMPTY;
+        }
         if (!active || targetBody == null || !targetBody.equals(definition.id())) {
             return ResourceExtractionResult.EMPTY;
         }

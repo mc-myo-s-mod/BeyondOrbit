@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NPN",
+    "DCD",
+    "NPN"
+  ],
+  "key": {
+    "N": { "item": "minecraft:netherite_scrap" },
+    "P": { "item": "minecraft:netherite_pickaxe" },
+    "D": { "item": "minecraft:diamond" },
+    "C": { "item": "beyondorbit:advanced_mining_module" }
+  },
+  "result": {
+    "id": "beyondorbit:elite_mining_module",
+    "count": 1
+  }
+}

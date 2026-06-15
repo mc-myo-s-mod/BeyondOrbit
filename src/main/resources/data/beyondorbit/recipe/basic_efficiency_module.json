@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AAA",
+    "ACA",
+    "AAA"
+  ],
+  "key": {
+    "A": { "item": "minecraft:amethyst_shard" },
+    "C": { "item": "beyondorbit:orbital_data_core" }
+  },
+  "result": {
+    "id": "beyondorbit:basic_efficiency_module",
+    "count": 1
+  }
+}

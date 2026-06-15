@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GDG",
+    "CSC",
+    "ROR"
+  ],
+  "key": {
+    "G": { "item": "minecraft:glass" },
+    "D": { "item": "minecraft:daylight_detector" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "S": { "item": "beyondorbit:basic_satellite" },
+    "R": { "item": "minecraft:redstone" },
+    "O": { "item": "beyondorbit:orbital_data_core" }
+  },
+  "result": {
+    "id": "beyondorbit:low_orbit_solar_satellite",
+    "count": 1
+  }
+}

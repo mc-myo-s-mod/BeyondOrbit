@@ -141,6 +141,12 @@ public final class BeyondOrbitContent {
             new Item.Properties().stacksTo(16)
     );
 
+    public static final DeferredItem<Item> LOW_ORBIT_SOLAR_SATELLITE = ITEMS.registerItem(
+            "low_orbit_solar_satellite",
+            Item::new,
+            new Item.Properties().stacksTo(16)
+    );
+
     public static final DeferredItem<Item> ORBITAL_DATA_CORE = ITEMS.registerItem(
             "orbital_data_core",
             Item::new,
@@ -149,6 +155,12 @@ public final class BeyondOrbitContent {
 
     public static final DeferredItem<Item> ROCKET_FRAME = ITEMS.registerItem(
             "rocket_frame",
+            Item::new,
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> SINGULARITY_MATRIX = ITEMS.registerItem(
+            "singularity_matrix",
             Item::new,
             new Item.Properties().stacksTo(16)
     );
@@ -214,8 +226,10 @@ public final class BeyondOrbitContent {
                     .icon(() -> BASIC_SATELLITE.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(BASIC_SATELLITE.get());
+                        output.accept(LOW_ORBIT_SOLAR_SATELLITE.get());
                         output.accept(ORBITAL_DATA_CORE.get());
                         output.accept(ROCKET_FRAME.get());
+                        output.accept(SINGULARITY_MATRIX.get());
                         output.accept(ORBITAL_MINING_MODULE.get());
                         output.accept(ADVANCED_MINING_MODULE.get());
                         output.accept(ELITE_MINING_MODULE.get());

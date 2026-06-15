@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NEN",
+    "DCD",
+    "NEN"
+  ],
+  "key": {
+    "N": { "item": "minecraft:netherite_scrap" },
+    "E": { "item": "minecraft:echo_shard" },
+    "D": { "item": "minecraft:diamond" },
+    "C": { "item": "beyondorbit:advanced_efficiency_module" }
+  },
+  "result": {
+    "id": "beyondorbit:elite_efficiency_module",
+    "count": 1
+  }
+}

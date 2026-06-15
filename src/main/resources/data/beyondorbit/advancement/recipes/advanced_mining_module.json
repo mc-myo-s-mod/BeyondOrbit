@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_unlock_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": "beyondorbit:orbital_mining_module" }] }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": { "recipe": "beyondorbit:advanced_mining_module" }
+    }
+  },
+  "requirements": [["has_the_recipe", "has_unlock_item"]],
+  "rewards": { "recipes": ["beyondorbit:advanced_mining_module"] }
+}

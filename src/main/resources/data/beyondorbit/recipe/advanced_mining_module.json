@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GPG",
+    "PCP",
+    "GPG"
+  ],
+  "key": {
+    "G": { "item": "minecraft:gold_ingot" },
+    "P": { "item": "minecraft:diamond_pickaxe" },
+    "C": { "item": "beyondorbit:orbital_mining_module" }
+  },
+  "result": {
+    "id": "beyondorbit:advanced_mining_module",
+    "count": 1
+  }
+}

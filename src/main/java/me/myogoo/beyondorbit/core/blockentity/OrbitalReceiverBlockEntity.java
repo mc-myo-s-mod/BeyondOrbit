@@ -37,17 +37,21 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
     private static final String ITEMS_TAG = "items";
     private static final String ENERGY_TAG = "energy";
     public static final int SLOT_COUNT = 18;
+    private final int[] syncedData = new int[8];
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
         public int get(int index) {
+            if (level != null && level.isClientSide()) {
+                return index >= 0 && index < syncedData.length ? syncedData[index] : 0;
+            }
             return switch (index) {
                 case 0 -> energyStored();
                 case 1 -> energyCapacity();
                 case 2 -> storedItemCount();
                 case 3 -> occupiedSlots();
                 case 4 -> SLOT_COUNT;
-                case 5 -> Config.orbitalReceiverSolarFePerTick;
+                case 5 -> currentSolarGenerationPerTick();
                 case 6 -> Config.orbitalReceiverTransferFePerTick;
                 case 7 -> Config.orbitalReceiverMaxItemsPerTick;
                 default -> 0;
@@ -56,7 +60,9 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
 
         @Override
         public void set(int index, int value) {
-            // The receiver screen is read-only; mutations happen through block ticks and player actions.
+            if (index >= 0 && index < syncedData.length) {
+                syncedData[index] = value;
+            }
         }
 
         @Override
@@ -101,8 +107,9 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
             return;
         }
         boolean changed = false;
-        changed |= blockEntity.receiveOrbitalSolarEnergy();
-        changed |= blockEntity.receiveSatelliteResources(BeyondOrbitSavedData.get(level.getServer()));
+        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(level.getServer());
+        changed |= blockEntity.receiveOrbitalSolarEnergy(data);
+        changed |= blockEntity.receiveSatelliteResources(data);
         changed |= blockEntity.exportEnergyToNeighbors(level, pos);
         if (changed) {
             blockEntity.setChanged();
@@ -182,18 +189,33 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
         return stacks;
     }
 
-    private boolean receiveOrbitalSolarEnergy() {
-        int generated = Config.orbitalReceiverSolarFePerTick;
+    public int currentSolarGenerationPerTick() {
+        if (level == null || level.getServer() == null) {
+            return 0;
+        }
+        return solarGenerationPerTick(BeyondOrbitSavedData.get(level.getServer()));
+    }
+
+    private boolean receiveOrbitalSolarEnergy(BeyondOrbitSavedData data) {
+        int generated = solarGenerationPerTick(data);
         if (generated <= 0) {
             return false;
         }
         return energy.receiveEnergy(generated, false) > 0;
     }
 
+    private static int solarGenerationPerTick(BeyondOrbitSavedData data) {
+        long generated = (long) data.lowOrbitSolarSatelliteCount() * Config.orbitalReceiverSolarFePerTick;
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, generated));
+    }
+
     private boolean receiveSatelliteResources(BeyondOrbitSavedData data) {
         int remainingBudget = Config.orbitalReceiverMaxItemsPerTick;
         boolean changed = false;
         for (SatelliteMiningMissionState satellite : data.satellites()) {
+            if (satellite.isLowOrbitSolar()) {
+                continue;
+            }
             if (satellite.satelliteId().getPath().startsWith("uplink_")) {
                 continue;
             }

@@ -1,0 +1,23 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_basic_satellite": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:basic_satellite"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "beyondorbit:low_orbit_solar_satellite"
+      }
+    }
+  },
+  "requirements": [["has_the_recipe", "has_basic_satellite"]],
+  "rewards": { "recipes": ["beyondorbit:low_orbit_solar_satellite"] }
+}

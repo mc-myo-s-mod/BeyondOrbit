@@ -46,6 +46,14 @@ public final class SatelliteUplinkService {
         );
     }
 
+    public static ResourceLocation lowOrbitSolarSatelliteIdFor(Level level, BlockPos pos) {
+        String dimension = sanitizePath(level.dimension().location().toString());
+        return ResourceLocation.fromNamespaceAndPath(
+                BeyondOrbitCore.MODID,
+                "low_orbit_solar_" + dimension + "_" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ()
+        );
+    }
+
     public static boolean deploySatellite(Level level, BlockPos pos, Player player, ItemStack satelliteStack) {
         if (!(level instanceof ServerLevel serverLevel)) {
             return true;
@@ -89,8 +97,8 @@ public final class SatelliteUplinkService {
             return true;
         }
 
-        Optional<CelestialBodyDefinition> target = defaultMiningTarget();
-        if (target.isEmpty()) {
+        Optional<CelestialBodyDefinition> defaultTarget = defaultMiningTarget();
+        if (defaultTarget.isEmpty()) {
             player.sendSystemMessage(Component.translatable("message.beyondorbit.uplink.no_bodies"));
             return false;
         }
@@ -118,8 +126,9 @@ public final class SatelliteUplinkService {
             efficiencyTier = OrbitalModuleTier.ELITE;
         }
 
+        Optional<CelestialBodyDefinition> target = launchPadMiningTarget(miningTier, speedTier, efficiencyTier);
+        CelestialBodyDefinition definition = target.orElse(defaultTarget.get());
         ResourceLocation satelliteId = launchPadSatelliteIdFor(level, pos);
-        CelestialBodyDefinition definition = target.get();
         BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
         data.getOrCreateState(definition);
         SatelliteMiningMissionState satellite = data.getOrCreateSatellite(satelliteId);
@@ -142,6 +151,45 @@ public final class SatelliteUplinkService {
                 definition.id().toString(),
                 rolls,
                 intervalTicks
+        ));
+        return true;
+    }
+
+    public static boolean launchLowOrbitSolarSatelliteFromPad(Level level, BlockPos pos, Player player, ItemStack satelliteStack) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return true;
+        }
+
+        ResourceLocation satelliteId = lowOrbitSolarSatelliteIdFor(level, pos);
+        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
+        SatelliteMiningMissionState existingSatellite = data.getSatellite(satelliteId).orElse(null);
+        if (existingSatellite != null && existingSatellite.isLowOrbitSolar()) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.beyondorbit.launch_pad.solar_already_deployed",
+                    satelliteId.toString(),
+                    data.lowOrbitSolarSatelliteCount(),
+                    Config.orbitalReceiverSolarFePerTick
+            ));
+            return false;
+        }
+
+        if (!player.getAbilities().instabuild) {
+            if (!consumeOne(player, BeyondOrbitContent.ROCKET_FRAME.get())) {
+                player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.missing_rocket_frame"));
+                return false;
+            }
+            satelliteStack.shrink(1);
+        }
+
+        SatelliteMiningMissionState satellite = data.getOrCreateSatellite(satelliteId);
+        satellite.markLowOrbitSolar();
+        data.setDirty();
+
+        player.sendSystemMessage(Component.translatable(
+                "message.beyondorbit.launch_pad.solar_launched",
+                satelliteId.toString(),
+                data.lowOrbitSolarSatelliteCount(),
+                Config.orbitalReceiverSolarFePerTick
         ));
         return true;
     }
@@ -351,9 +399,23 @@ public final class SatelliteUplinkService {
         return new ItemStack(item.get());
     }
 
-    private static Optional<CelestialBodyDefinition> defaultMiningTarget() {
+    public static Optional<CelestialBodyDefinition> defaultMiningTarget() {
         return CelestialBodyRegistry.all().stream()
                 .min(Comparator.comparingInt(CelestialBodyDefinition::tier).thenComparing(CelestialBodyDefinition::id));
+    }
+
+    public static Optional<CelestialBodyDefinition> launchPadMiningTarget(
+            OrbitalModuleTier miningTier,
+            OrbitalModuleTier speedTier,
+            OrbitalModuleTier efficiencyTier
+    ) {
+        if (miningTier == OrbitalModuleTier.ELITE
+                && speedTier == OrbitalModuleTier.ELITE
+                && efficiencyTier == OrbitalModuleTier.ELITE) {
+            return CelestialBodyRegistry.all().stream()
+                    .max(Comparator.comparingInt(CelestialBodyDefinition::tier).thenComparing(CelestialBodyDefinition::id));
+        }
+        return defaultMiningTarget();
     }
 
     private static boolean consumeOne(Player player, Item item) {

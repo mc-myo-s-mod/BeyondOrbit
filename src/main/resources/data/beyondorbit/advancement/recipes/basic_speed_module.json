@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_unlock_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": "beyondorbit:orbital_data_core" }] }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": { "recipe": "beyondorbit:basic_speed_module" }
+    }
+  },
+  "requirements": [["has_the_recipe", "has_unlock_item"]],
+  "rewards": { "recipes": ["beyondorbit:basic_speed_module"] }
+}

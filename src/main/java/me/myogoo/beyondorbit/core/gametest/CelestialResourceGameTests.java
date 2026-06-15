@@ -32,7 +32,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -127,9 +126,14 @@ public final class CelestialResourceGameTests {
         ResourceLocation itemReceiverBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "item_receiver");
         ResourceLocation satelliteMonitorBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "satellite_monitor");
         ResourceLocation moduleAssemblerBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "module_assembler");
+        ResourceLocation singularityMatrixItemId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "singularity_matrix");
+        ResourceLocation lowOrbitSolarSatelliteItemId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "low_orbit_solar_satellite");
 
         if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.BASIC_SATELLITE.get()).equals(satelliteItemId)) {
             throw new AssertionError("Expected basic satellite item to be registered as " + satelliteItemId);
+        }
+        if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.LOW_ORBIT_SOLAR_SATELLITE.get()).equals(lowOrbitSolarSatelliteItemId)) {
+            throw new AssertionError("Expected low orbit solar satellite item to be registered as " + lowOrbitSolarSatelliteItemId);
         }
         if (!BuiltInRegistries.BLOCK.getKey(BeyondOrbitContent.SATELLITE_UPLINK.get()).equals(uplinkBlockId)) {
             throw new AssertionError("Expected satellite uplink block to be registered as " + uplinkBlockId);
@@ -148,6 +152,9 @@ public final class CelestialResourceGameTests {
         }
         if (!BuiltInRegistries.BLOCK.getKey(BeyondOrbitContent.MODULE_ASSEMBLER.get()).equals(moduleAssemblerBlockId)) {
             throw new AssertionError("Expected module assembler block to be registered as " + moduleAssemblerBlockId);
+        }
+        if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.SINGULARITY_MATRIX.get()).equals(singularityMatrixItemId)) {
+            throw new AssertionError("Expected singularity matrix item to be registered as " + singularityMatrixItemId);
         }
         if (!(BeyondOrbitContent.ELITE_SPEED_MODULE.get() instanceof OrbitalModuleItem eliteSpeedModule)
                 || eliteSpeedModule.moduleType() != OrbitalModuleType.SPEED
@@ -204,6 +211,90 @@ public final class CelestialResourceGameTests {
         }
         if (BeyondOrbitContent.LAUNCH_PAD_MENU.get() == null) {
             throw new AssertionError("Expected launch pad menu type to be registered");
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 20)
+    public static void eliteLaunchPadLoadoutTargetsDeepSpaceBody(GameTestHelper helper) {
+        ResourceLocation defaultTargetId = SatelliteUplinkService.defaultMiningTarget()
+                .map(CelestialBodyDefinition::id)
+                .orElseThrow(() -> new AssertionError("Expected at least one default celestial mining target"));
+        ResourceLocation eliteTargetId = SatelliteUplinkService.launchPadMiningTarget(
+                        OrbitalModuleTier.ELITE,
+                        OrbitalModuleTier.ELITE,
+                        OrbitalModuleTier.ELITE
+                )
+                .map(CelestialBodyDefinition::id)
+                .orElseThrow(() -> new AssertionError("Expected elite launch pad loadout to resolve a celestial target"));
+
+        ResourceLocation expectedDefault = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "crimson_asteroid");
+        ResourceLocation expectedElite = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "void_maw");
+        if (!defaultTargetId.equals(expectedDefault)) {
+            throw new AssertionError("Expected default mining target to remain " + expectedDefault + ", got " + defaultTargetId);
+        }
+        if (!eliteTargetId.equals(expectedElite)) {
+            throw new AssertionError("Expected elite launch pad target to be " + expectedElite + ", got " + eliteTargetId);
+        }
+
+        CelestialBodyDefinition deepSpace = CelestialBodyRegistry.get(expectedElite)
+                .orElseThrow(() -> new AssertionError("Expected deep space celestial body to be loaded: " + expectedElite));
+        ResourceLocation matrixId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "singularity_matrix");
+        boolean exposesMatrix = deepSpace.resources().stream().anyMatch(resource -> resource.id().equals(matrixId));
+        if (!exposesMatrix) {
+            throw new AssertionError("Expected void_maw to expose singularity matrix as an orbital resource");
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 80)
+    public static void lowOrbitSolarSatellitePowersOrbitalReceiver(GameTestHelper helper) {
+        BlockPos padPos = new BlockPos(1, 2, 1);
+        BlockPos receiverPos = new BlockPos(3, 2, 1);
+
+        BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
+        int solarSatellitesBefore = savedData.lowOrbitSolarSatelliteCount();
+
+        helper.setBlock(padPos, BeyondOrbitContent.LAUNCH_PAD.get());
+        Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getAbilities().instabuild = false;
+        ItemStack satelliteStack = new ItemStack(BeyondOrbitContent.LOW_ORBIT_SOLAR_SATELLITE.get());
+        player.setItemInHand(InteractionHand.MAIN_HAND, satelliteStack);
+        player.getInventory().add(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()));
+
+        helper.useBlock(padPos, player);
+        if (!satelliteStack.isEmpty()) {
+            throw new AssertionError("Expected Launch Pad to consume one Low Orbit Solar Satellite");
+        }
+        if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()))) {
+            throw new AssertionError("Expected Launch Pad to consume one Rocket Frame for Low Orbit Solar Satellite launch");
+        }
+
+        int solarSatellitesAfter = savedData.lowOrbitSolarSatelliteCount();
+        if (solarSatellitesAfter <= solarSatellitesBefore) {
+            throw new AssertionError("Expected Low Orbit Solar Satellite launch to register orbital solar capacity, before="
+                    + solarSatellitesBefore + ", after=" + solarSatellitesAfter);
+        }
+
+        ResourceLocation solarSatelliteId = SatelliteUplinkService.lowOrbitSolarSatelliteIdFor(helper.getLevel(), helper.absolutePos(padPos));
+        SatelliteMiningMissionState solarSatellite = savedData.getSatellite(solarSatelliteId)
+                .orElseThrow(() -> new AssertionError("Expected launch pad to create linked Low Orbit Solar Satellite " + solarSatelliteId));
+        if (!solarSatellite.isLowOrbitSolar()) {
+            throw new AssertionError("Expected linked satellite state to be marked as low orbit solar: " + solarSatelliteId);
+        }
+        if (solarSatellite.active() || solarSatellite.targetBody() != null) {
+            throw new AssertionError("Expected Low Orbit Solar Satellite state not to start an active mining mission: " + solarSatelliteId);
+        }
+
+        helper.setBlock(receiverPos, BeyondOrbitContent.ORBITAL_RECEIVER.get());
+        OrbitalReceiverBlockEntity receiver = (OrbitalReceiverBlockEntity) helper.getBlockEntity(receiverPos);
+        OrbitalReceiverBlockEntity.serverTick(helper.getLevel(), helper.absolutePos(receiverPos), receiver.getBlockState(), receiver);
+        if (receiver.energyStored() < Config.orbitalReceiverSolarFePerTick) {
+            throw new AssertionError("Expected Orbital Receiver to receive at least "
+                    + Config.orbitalReceiverSolarFePerTick + " FE/t from a launched Low Orbit Solar Satellite, got "
+                    + receiver.energyStored());
         }
 
         helper.succeed();
@@ -280,6 +371,7 @@ public final class CelestialResourceGameTests {
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
         SatelliteMiningMissionState satellite = savedData.getOrCreateSatellite(satelliteId);
+        int solarSatellitesBeforeReceiverTick = savedData.lowOrbitSolarSatelliteCount();
         satellite.startMining(bodyId, 32, 1);
         for (int i = 0; i < 8; i++) {
             savedData.tickSatellites(RandomSource.create(4000L + i));
@@ -295,8 +387,9 @@ public final class CelestialResourceGameTests {
         if (receiver.storedItemCount() <= 0) {
             throw new AssertionError("Expected Orbital Receiver to pull mined resources into its item buffer");
         }
-        if (receiver.energyStored() <= 0) {
-            throw new AssertionError("Expected Orbital Receiver to store FE from orbital solar panels");
+        if (solarSatellitesBeforeReceiverTick <= 0 && receiver.energyStored() != 0) {
+            throw new AssertionError("Expected Orbital Receiver not to generate passive fake solar FE without a Low Orbit Solar Satellite, got "
+                    + receiver.energyStored());
         }
 
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -410,7 +503,7 @@ public final class CelestialResourceGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 80)
-    public static void moduleAssemblerBuildsHighestAvailableTierModule(GameTestHelper helper) {
+    public static void moduleAssemblerBuildsOnlyBasicModules(GameTestHelper helper) {
         BlockPos assemblerPos = new BlockPos(1, 2, 1);
         helper.setBlock(assemblerPos, BeyondOrbitContent.MODULE_ASSEMBLER.get());
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -423,23 +516,26 @@ public final class CelestialResourceGameTests {
 
         boolean assembled = ModuleAssemblyService.assemble(player, catalyst);
         if (!assembled) {
-            throw new AssertionError("Expected module assembler service to accept Redstone catalyst and available materials");
+            throw new AssertionError("Expected module assembler service to accept Redstone catalyst and basic materials");
         }
 
         if (player.getInventory().contains(new ItemStack(Items.REDSTONE))) {
             throw new AssertionError("Expected module assembler to consume one Redstone catalyst");
         }
-        if (!player.getInventory().contains(new ItemStack(BeyondOrbitContent.ELITE_SPEED_MODULE.get()))) {
-            throw new AssertionError("Expected module assembler to create an Elite Speed Module from diamond tier material");
+        if (!player.getInventory().contains(new ItemStack(BeyondOrbitContent.BASIC_SPEED_MODULE.get()))) {
+            throw new AssertionError("Expected module assembler to create a Basic Speed Module");
+        }
+        if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ELITE_SPEED_MODULE.get()))) {
+            throw new AssertionError("Expected module assembler not to bypass crafting progression by creating Elite modules");
         }
         if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ORBITAL_DATA_CORE.get()))) {
             throw new AssertionError("Expected module assembler to consume one Orbital Data Core");
         }
-        if (player.getInventory().contains(new ItemStack(Items.DIAMOND))) {
-            throw new AssertionError("Expected module assembler to consume the highest available tier material");
+        if (!player.getInventory().contains(new ItemStack(Items.DIAMOND))) {
+            throw new AssertionError("Expected Diamond to remain because advanced and elite upgrades use crafting recipes");
         }
-        if (!player.getInventory().contains(new ItemStack(Items.COPPER_INGOT))) {
-            throw new AssertionError("Expected lower tier material to remain when a higher tier material is selected");
+        if (player.getInventory().contains(new ItemStack(Items.COPPER_INGOT))) {
+            throw new AssertionError("Expected module assembler to consume one Copper Ingot for the Basic module");
         }
 
         helper.succeed();
