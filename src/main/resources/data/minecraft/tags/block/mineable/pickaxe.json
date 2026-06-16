@@ -6,6 +6,7 @@
     "beyondorbit:orbital_receiver",
     "beyondorbit:item_receiver",
     "beyondorbit:satellite_monitor",
-    "beyondorbit:module_assembler"
+    "beyondorbit:module_assembler",
+    "beyondorbit:telescope"
   ]
 }

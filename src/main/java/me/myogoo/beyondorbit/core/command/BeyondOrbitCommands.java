@@ -395,6 +395,7 @@ public final class BeyondOrbitCommands {
     private static String formatSatelliteSummary(SatelliteMiningMissionState satellite) {
         return satellite.satelliteId()
                 + " [target=" + (satellite.targetBody() == null ? "<none>" : satellite.targetBody())
+                + ", phase=" + satellite.missionPhase() + "(" + satellite.phaseTicksRemaining() + ")"
                 + ", active=" + satellite.active()
                 + ", next=" + satellite.ticksUntilNextExtraction() + "/" + satellite.ticksPerExtraction()
                 + ", rolls=" + satellite.rollsPerExtraction()

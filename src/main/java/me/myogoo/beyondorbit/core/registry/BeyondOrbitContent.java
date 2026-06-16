@@ -7,6 +7,7 @@ import me.myogoo.beyondorbit.core.block.ModuleAssemblerBlock;
 import me.myogoo.beyondorbit.core.block.OrbitalReceiverBlock;
 import me.myogoo.beyondorbit.core.block.SatelliteMonitorBlock;
 import me.myogoo.beyondorbit.core.block.SatelliteUplinkBlock;
+import me.myogoo.beyondorbit.core.block.TelescopeBlock;
 import me.myogoo.beyondorbit.core.blockentity.ItemReceiverBlockEntity;
 import me.myogoo.beyondorbit.core.blockentity.OrbitalReceiverBlockEntity;
 import me.myogoo.beyondorbit.core.blockentity.SatelliteUplinkBlockEntity;
@@ -16,6 +17,8 @@ import me.myogoo.beyondorbit.core.menu.SatelliteUplinkMenu;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleItem;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleTier;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
+import me.myogoo.beyondorbit.core.solar.SolarPanelItem;
+import me.myogoo.beyondorbit.core.solar.SolarPanelTier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
@@ -89,6 +92,15 @@ public final class BeyondOrbitContent {
                     .sound(SoundType.METAL)
     );
 
+    public static final DeferredBlock<Block> TELESCOPE = BLOCKS.registerBlock(
+            "telescope",
+            TelescopeBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(3.0F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL)
+    );
+
     public static final DeferredBlock<Block> MODULE_ASSEMBLER = BLOCKS.registerBlock(
             "module_assembler",
             ModuleAssemblerBlock::new,
@@ -133,6 +145,7 @@ public final class BeyondOrbitContent {
     public static final DeferredItem<BlockItem> ORBITAL_RECEIVER_ITEM = ITEMS.registerSimpleBlockItem(ORBITAL_RECEIVER, new Item.Properties());
     public static final DeferredItem<BlockItem> ITEM_RECEIVER_ITEM = ITEMS.registerSimpleBlockItem(ITEM_RECEIVER, new Item.Properties());
     public static final DeferredItem<BlockItem> SATELLITE_MONITOR_ITEM = ITEMS.registerSimpleBlockItem(SATELLITE_MONITOR, new Item.Properties());
+    public static final DeferredItem<BlockItem> TELESCOPE_ITEM = ITEMS.registerSimpleBlockItem(TELESCOPE, new Item.Properties());
     public static final DeferredItem<BlockItem> MODULE_ASSEMBLER_ITEM = ITEMS.registerSimpleBlockItem(MODULE_ASSEMBLER, new Item.Properties());
 
     public static final DeferredItem<Item> BASIC_SATELLITE = ITEMS.registerItem(
@@ -144,6 +157,24 @@ public final class BeyondOrbitContent {
     public static final DeferredItem<Item> LOW_ORBIT_SOLAR_SATELLITE = ITEMS.registerItem(
             "low_orbit_solar_satellite",
             Item::new,
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> SOLAR_PANEL = ITEMS.registerItem(
+            "solar_panel",
+            properties -> new SolarPanelItem(SolarPanelTier.BASIC, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ADVANCED_SOLAR_PANEL = ITEMS.registerItem(
+            "advanced_solar_panel",
+            properties -> new SolarPanelItem(SolarPanelTier.ADVANCED, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ELITE_SOLAR_PANEL = ITEMS.registerItem(
+            "elite_solar_panel",
+            properties -> new SolarPanelItem(SolarPanelTier.ELITE, properties),
             new Item.Properties().stacksTo(16)
     );
 
@@ -227,6 +258,9 @@ public final class BeyondOrbitContent {
                     .displayItems((parameters, output) -> {
                         output.accept(BASIC_SATELLITE.get());
                         output.accept(LOW_ORBIT_SOLAR_SATELLITE.get());
+                        output.accept(SOLAR_PANEL.get());
+                        output.accept(ADVANCED_SOLAR_PANEL.get());
+                        output.accept(ELITE_SOLAR_PANEL.get());
                         output.accept(ORBITAL_DATA_CORE.get());
                         output.accept(ROCKET_FRAME.get());
                         output.accept(SINGULARITY_MATRIX.get());
@@ -244,6 +278,7 @@ public final class BeyondOrbitContent {
                         output.accept(ORBITAL_RECEIVER_ITEM.get());
                         output.accept(ITEM_RECEIVER_ITEM.get());
                         output.accept(SATELLITE_MONITOR_ITEM.get());
+                        output.accept(TELESCOPE_ITEM.get());
                         output.accept(MODULE_ASSEMBLER_ITEM.get());
                     })
                     .build()

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GGG",
+    "RDR",
+    "CCC"
+  ],
+  "key": {
+    "G": { "item": "minecraft:glass_pane" },
+    "R": { "item": "minecraft:redstone" },
+    "D": { "item": "minecraft:daylight_detector" },
+    "C": { "item": "minecraft:copper_ingot" }
+  },
+  "result": {
+    "id": "beyondorbit:solar_panel",
+    "count": 1
+  }
+}

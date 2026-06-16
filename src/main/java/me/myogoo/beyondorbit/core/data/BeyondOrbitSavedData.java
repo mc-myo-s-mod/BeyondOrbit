@@ -10,6 +10,7 @@ import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -21,16 +22,20 @@ import net.minecraft.world.level.saveddata.SavedData;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public final class BeyondOrbitSavedData extends SavedData {
     private static final String DATA_NAME = BeyondOrbitCore.MODID + "_orbital_data";
     private static final String CELESTIAL_STATES_TAG = "celestial_states";
     private static final String SATELLITES_TAG = "satellites";
+    private static final String DISCOVERED_CELESTIAL_BODIES_TAG = "discovered_celestial_bodies";
 
     private final Map<ResourceLocation, CelestialBodyState> celestialStates = new HashMap<>();
     private final Map<ResourceLocation, SatelliteMiningMissionState> satellites = new HashMap<>();
+    private final Set<ResourceLocation> discoveredCelestialBodies = new HashSet<>();
 
     public static BeyondOrbitSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.getLevel(Level.OVERWORLD);
@@ -53,6 +58,13 @@ public final class BeyondOrbitSavedData extends SavedData {
             SatelliteMiningMissionState satellite = SatelliteMiningMissionState.load(satellites.getCompound(i));
             data.satellites.put(satellite.satelliteId(), satellite);
         }
+        ListTag discoveredBodies = tag.getList(DISCOVERED_CELESTIAL_BODIES_TAG, Tag.TAG_STRING);
+        for (int i = 0; i < discoveredBodies.size(); i++) {
+            ResourceLocation bodyId = ResourceLocation.tryParse(discoveredBodies.getString(i));
+            if (bodyId != null) {
+                data.discoveredCelestialBodies.add(bodyId);
+            }
+        }
         return data;
     }
 
@@ -71,7 +83,41 @@ public final class BeyondOrbitSavedData extends SavedData {
                 .map(SatelliteMiningMissionState::save)
                 .forEach(satelliteTags::add);
         tag.put(SATELLITES_TAG, satelliteTags);
+
+        ListTag discoveredBodies = new ListTag();
+        discoveredCelestialBodies.stream()
+                .sorted(ResourceLocation::compareTo)
+                .map(ResourceLocation::toString)
+                .map(StringTag::valueOf)
+                .forEach(discoveredBodies::add);
+        tag.put(DISCOVERED_CELESTIAL_BODIES_TAG, discoveredBodies);
         return tag;
+    }
+
+    public boolean discoverCelestialBody(ResourceLocation bodyId) {
+        boolean discovered = discoveredCelestialBodies.add(bodyId);
+        if (discovered) {
+            setDirty();
+        }
+        return discovered;
+    }
+
+    public boolean isCelestialBodyDiscovered(ResourceLocation bodyId) {
+        return discoveredCelestialBodies.contains(bodyId);
+    }
+
+    public Set<ResourceLocation> discoveredCelestialBodiesView() {
+        return Collections.unmodifiableSet(discoveredCelestialBodies);
+    }
+
+    public Optional<CelestialBodyDefinition> nextUndiscoveredCelestialBody() {
+        return CelestialBodyRegistry.all().stream()
+                .filter(definition -> !isCelestialBodyDiscovered(definition.id()))
+                .sorted((left, right) -> {
+                    int tierCompare = Integer.compare(left.tier(), right.tier());
+                    return tierCompare != 0 ? tierCompare : left.id().compareTo(right.id());
+                })
+                .findFirst();
     }
 
     public CelestialBodyState getOrCreateState(CelestialBodyDefinition definition) {
@@ -110,15 +156,33 @@ public final class BeyondOrbitSavedData extends SavedData {
         return Collections.unmodifiableCollection(satellites.values());
     }
 
-    public int lowOrbitSolarSatelliteCount() {
-        return (int) satellites.values().stream()
+    public Collection<SatelliteMiningMissionState> lowOrbitSolarSatellites() {
+        return satellites.values().stream()
                 .filter(SatelliteMiningMissionState::isLowOrbitSolar)
-                .count();
+                .toList();
+    }
+
+    public Collection<SatelliteMiningMissionState> activeLowOrbitSolarSatellites() {
+        return satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isLowOrbitSolar)
+                .filter(satellite -> satellite.missionPhase() == SatelliteMiningMissionState.MissionPhase.ACTIVE)
+                .toList();
+    }
+
+    public int lowOrbitSolarSatelliteCount() {
+        return lowOrbitSolarSatellites().size();
+    }
+
+    public int activeLowOrbitSolarSatelliteCount() {
+        return activeLowOrbitSolarSatellites().size();
     }
 
     public int tickSatellites(RandomSource random) {
         int activeExtractions = 0;
         for (SatelliteMiningMissionState satellite : satellites.values()) {
+            if (satellite.advanceMissionPhase()) {
+                setDirty();
+            }
             if (satellite.isLowOrbitSolar()) {
                 continue;
             }

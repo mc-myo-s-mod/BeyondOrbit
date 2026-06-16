@@ -19,5 +19,6 @@
       "min_yield": 24,
       "max_yield": 80
     }
-  ]
+  ],
+  "distance": 7
 }

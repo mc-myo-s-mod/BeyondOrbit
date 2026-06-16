@@ -39,7 +39,8 @@ public class OrbitalReceiverScreen extends AbstractContainerScreen<OrbitalReceiv
         graphics.drawString(font, title, 8, 8, 0xFFE8EEF7, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.energy", menu.energy(), menu.energyCapacity()), 12, 26, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.generation", menu.solarGenerationPerTick()), 12, 60, 0xFFB9C7D8, false);
-        graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.transfer", menu.transferPerTick()), 12, 72, 0xFFB9C7D8, false);
+        graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.solar_stats", menu.activeSolarSatellites(), menu.deployedSolarSatellites(), menu.solarGrossGenerationPerTick(), menu.solarTransmissionLossPercent()), 12, 72, 0xFFB9C7D8, false);
+        graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.transfer", menu.transferPerTick()), 12, 84, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.items", menu.storedItemCount(), menu.occupiedSlots(), menu.slotCount()), 12, 103, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.pull_rate", menu.maxItemsPerTick()), 12, 115, 0xFFB9C7D8, false);
         graphics.drawString(font, Component.translatable("screen.beyondorbit.receiver.collect_hint"), 12, 128, 0xFF7F91A7, false);

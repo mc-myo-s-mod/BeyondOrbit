@@ -5,6 +5,7 @@ import me.myogoo.beyondorbit.core.data.BeyondOrbitSavedData;
 import me.myogoo.beyondorbit.core.menu.OrbitalReceiverMenu;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
+import me.myogoo.beyondorbit.core.solar.SolarPanelTier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -37,7 +38,7 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
     private static final String ITEMS_TAG = "items";
     private static final String ENERGY_TAG = "energy";
     public static final int SLOT_COUNT = 18;
-    private final int[] syncedData = new int[8];
+    private final int[] syncedData = new int[12];
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -54,6 +55,10 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
                 case 5 -> currentSolarGenerationPerTick();
                 case 6 -> Config.orbitalReceiverTransferFePerTick;
                 case 7 -> Config.orbitalReceiverMaxItemsPerTick;
+                case 8 -> currentDeployedSolarSatellites();
+                case 9 -> currentActiveSolarSatellites();
+                case 10 -> currentSolarGrossGenerationPerTick();
+                case 11 -> currentSolarTransmissionLossPercent();
                 default -> 0;
             };
         }
@@ -67,7 +72,7 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
 
         @Override
         public int getCount() {
-            return 8;
+            return 12;
         }
     };
 
@@ -196,6 +201,34 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
         return solarGenerationPerTick(BeyondOrbitSavedData.get(level.getServer()));
     }
 
+    public int currentSolarGrossGenerationPerTick() {
+        if (level == null || level.getServer() == null) {
+            return 0;
+        }
+        return solarGrossGenerationPerTick(BeyondOrbitSavedData.get(level.getServer()));
+    }
+
+    public int currentSolarTransmissionLossPercent() {
+        if (level == null || level.getServer() == null) {
+            return 0;
+        }
+        return solarTransmissionLossPercent(BeyondOrbitSavedData.get(level.getServer()));
+    }
+
+    public int currentDeployedSolarSatellites() {
+        if (level == null || level.getServer() == null) {
+            return 0;
+        }
+        return BeyondOrbitSavedData.get(level.getServer()).lowOrbitSolarSatelliteCount();
+    }
+
+    public int currentActiveSolarSatellites() {
+        if (level == null || level.getServer() == null) {
+            return 0;
+        }
+        return BeyondOrbitSavedData.get(level.getServer()).activeLowOrbitSolarSatelliteCount();
+    }
+
     private boolean receiveOrbitalSolarEnergy(BeyondOrbitSavedData data) {
         int generated = solarGenerationPerTick(data);
         if (generated <= 0) {
@@ -204,9 +237,55 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
         return energy.receiveEnergy(generated, false) > 0;
     }
 
-    private static int solarGenerationPerTick(BeyondOrbitSavedData data) {
-        long generated = (long) data.lowOrbitSolarSatelliteCount() * Config.orbitalReceiverSolarFePerTick;
+    public static int transmissionLossPercentForDistance(int distanceKm) {
+        long loss = (long) Math.max(0, distanceKm) * Config.orbitalReceiverTransmissionLossPercentPer1000Km / 1000L;
+        return (int) Math.min(100L, Math.max(0L, loss));
+    }
+
+    public static int solarGrossOutputPerActiveSatellite(SatelliteMiningMissionState satellite) {
+        if (satellite == null || !satellite.isLowOrbitSolar()) {
+            return 0;
+        }
+        long gross = (long) Config.orbitalReceiverSolarFePerTick * satellite.solarPanelTier().outputPercent() / 100L;
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, gross));
+    }
+
+    public static int solarOutputPerActiveSatellite(SatelliteMiningMissionState satellite) {
+        int gross = solarGrossOutputPerActiveSatellite(satellite);
+        int lossPercent = transmissionLossPercentForDistance(satellite.orbitDistanceKm());
+        long net = (long) gross * (100L - lossPercent) / 100L;
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, net));
+    }
+
+    public static int solarOutputPerActiveSatellite() {
+        SatelliteMiningMissionState preview = new SatelliteMiningMissionState(
+                ResourceLocation.fromNamespaceAndPath("beyondorbit", "preview_low_orbit_solar")
+        );
+        preview.markLowOrbitSolar(0, SolarPanelTier.BASIC, Config.lowOrbitSolarDistanceKm);
+        return solarOutputPerActiveSatellite(preview);
+    }
+
+    public static int solarGrossGenerationPerTick(BeyondOrbitSavedData data) {
+        long generated = data.activeLowOrbitSolarSatellites().stream()
+                .mapToLong(OrbitalReceiverBlockEntity::solarGrossOutputPerActiveSatellite)
+                .sum();
         return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, generated));
+    }
+
+    public static int solarGenerationPerTick(BeyondOrbitSavedData data) {
+        long generated = data.activeLowOrbitSolarSatellites().stream()
+                .mapToLong(OrbitalReceiverBlockEntity::solarOutputPerActiveSatellite)
+                .sum();
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, generated));
+    }
+
+    public static int solarTransmissionLossPercent(BeyondOrbitSavedData data) {
+        int gross = solarGrossGenerationPerTick(data);
+        int net = solarGenerationPerTick(data);
+        if (gross <= 0) {
+            return 0;
+        }
+        return Math.max(0, Math.min(100, 100 - (int) ((long) net * 100L / gross)));
     }
 
     private boolean receiveSatelliteResources(BeyondOrbitSavedData data) {
