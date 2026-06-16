@@ -230,16 +230,20 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
     }
 
     private boolean receiveOrbitalSolarEnergy(BeyondOrbitSavedData data) {
-        int generated = solarGenerationPerTick(data);
-        int stored = storeOrbitalEnergy(data, generated);
-        int direct = Math.max(0, generated - stored);
         int capacityLeft = Math.max(0, energy.getMaxEnergyStored() - energy.getEnergyStored());
-        int fromStorage = extractStoredOrbitalEnergy(data, Math.max(0, capacityLeft - direct));
-        int received = direct + fromStorage;
+        if (capacityLeft <= 0) {
+            return false;
+        }
+        int received;
+        if (data.activeEnergyStorageSatelliteCount() > 0) {
+            received = extractStoredOrbitalEnergy(data, capacityLeft);
+        } else {
+            received = solarGenerationPerTick(data);
+        }
         if (received <= 0) {
             return false;
         }
-        return energy.receiveEnergy(received, false) > 0 || stored > 0 || fromStorage > 0;
+        return energy.receiveEnergy(received, false) > 0;
     }
 
     public static int storeOrbitalEnergy(BeyondOrbitSavedData data, int amount) {

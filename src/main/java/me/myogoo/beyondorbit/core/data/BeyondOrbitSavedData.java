@@ -6,6 +6,7 @@ import me.myogoo.beyondorbit.core.celestial.CelestialBodyDefinition;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyRegistry;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyState;
 import me.myogoo.beyondorbit.core.celestial.ResourceExtractionResult;
+import me.myogoo.beyondorbit.core.blockentity.OrbitalReceiverBlockEntity;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -200,6 +201,9 @@ public final class BeyondOrbitSavedData extends SavedData {
 
     public int tickSatellites(RandomSource random) {
         int activeExtractions = 0;
+        if (activeEnergyStorageSatelliteCount() > 0) {
+            OrbitalReceiverBlockEntity.storeOrbitalEnergy(this, OrbitalReceiverBlockEntity.solarGenerationPerTick(this));
+        }
         for (SatelliteMiningMissionState satellite : satellites.values()) {
             if (satellite.advanceMissionPhase()) {
                 setDirty();

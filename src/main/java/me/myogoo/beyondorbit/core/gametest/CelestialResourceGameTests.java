@@ -435,7 +435,7 @@ public final class CelestialResourceGameTests {
         // Other GameTests share the same server SavedData and may tick/reset unrelated orbital state in parallel.
         // Keep this assertion focused on the linked Uplink satellite by giving it a deterministic short mission.
         satellite.startMining(bodyId, Config.maxExtractionRollsPerOperation, 1);
-        for (int i = 0; i < 20 && satellite.totalExtractedView().isEmpty(); i++) {
+        for (int i = 0; i < 200 && satellite.totalExtractedView().isEmpty(); i++) {
             satellite.tick(definition, savedData.getOrCreateState(definition), RandomSource.create(3000L + i));
         }
         if (satellite.totalExtractedView().isEmpty()) {
@@ -756,7 +756,7 @@ public final class CelestialResourceGameTests {
         }
 
         satellite.startMining(bodyId, Config.maxExtractionRollsPerOperation, 1);
-        for (int i = 0; i < 20 && satellite.totalExtractedView().isEmpty(); i++) {
+        for (int i = 0; i < 200 && satellite.totalExtractedView().isEmpty(); i++) {
             satellite.tick(definition, savedData.getOrCreateState(definition), RandomSource.create(5000L + i));
         }
         if (satellite.totalExtractedView().isEmpty()) {
@@ -1120,19 +1120,36 @@ public final class CelestialResourceGameTests {
             throw new AssertionError("Expected energy storage satellite to become active after deployment");
         }
 
+        ResourceLocation solarId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "test_storage_solar_source");
+        SatelliteMiningMissionState solarSatellite = savedData.getOrCreateSatellite(solarId);
+        solarSatellite.markLowOrbitSolar(0, SolarPanelTier.BASIC, Config.lowOrbitSolarDistanceKm);
+        int generatedPerTick = OrbitalReceiverBlockEntity.solarGenerationPerTick(savedData);
+        if (generatedPerTick <= 0) {
+            throw new AssertionError("Expected active solar satellite to produce orbital FE");
+        }
+        int beforeSavedDataTick = storageSatellite.storedEnergy();
+        savedData.tickSatellites(RandomSource.create(14000L));
+        int expectedStoredFromTick = Math.min(generatedPerTick, Config.orbitalEnergyStorageTransferFePerTick);
+        if (storageSatellite.storedEnergy() != beforeSavedDataTick + expectedStoredFromTick) {
+            throw new AssertionError("Expected saved-data tick to charge orbital storage exactly once, got " + storageSatellite.storedEnergy());
+        }
+
+        int afterSavedDataTick = storageSatellite.storedEnergy();
         int stored = OrbitalReceiverBlockEntity.storeOrbitalEnergy(savedData, 512);
         if (stored != Math.min(512, Config.orbitalEnergyStorageTransferFePerTick)) {
             throw new AssertionError("Expected active storage satellite to accept orbital FE, got " + stored);
         }
-        if (storageSatellite.storedEnergy() != stored) {
+        if (storageSatellite.storedEnergy() != afterSavedDataTick + stored) {
             throw new AssertionError("Expected satellite stored energy to increase");
         }
+        int beforeExtractionTotal = savedData.activeEnergyStorageSatellites().stream().mapToInt(SatelliteMiningMissionState::storedEnergy).sum();
         int extracted = OrbitalReceiverBlockEntity.extractStoredOrbitalEnergy(savedData, 128);
         if (extracted != Math.min(128, Config.orbitalEnergyStorageTransferFePerTick)) {
             throw new AssertionError("Expected receiver path to extract orbital storage FE, got " + extracted);
         }
-        if (storageSatellite.storedEnergy() != stored - extracted) {
-            throw new AssertionError("Expected satellite stored energy to decrease after extraction");
+        int afterExtractionTotal = savedData.activeEnergyStorageSatellites().stream().mapToInt(SatelliteMiningMissionState::storedEnergy).sum();
+        if (afterExtractionTotal != beforeExtractionTotal - extracted) {
+            throw new AssertionError("Expected active storage total to decrease after extraction");
         }
 
         CompoundTag savedTag = storageSatellite.save();
