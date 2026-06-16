@@ -19,6 +19,9 @@ import me.myogoo.beyondorbit.core.module.OrbitalModuleTier;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
 import me.myogoo.beyondorbit.core.solar.SolarPanelItem;
 import me.myogoo.beyondorbit.core.solar.SolarPanelTier;
+import me.myogoo.beyondorbit.core.tier.TierableComponentItem;
+import me.myogoo.beyondorbit.core.tier.TierableItemTier;
+import me.myogoo.beyondorbit.core.tier.TierableItemType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
@@ -178,6 +181,78 @@ public final class BeyondOrbitContent {
             new Item.Properties().stacksTo(16)
     );
 
+    public static final DeferredItem<Item> BASIC_SATELLITE_BODY = ITEMS.registerItem(
+            "satellite_body",
+            properties -> new TierableComponentItem(TierableItemType.BODY, TierableItemTier.BASIC, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ADVANCED_SATELLITE_BODY = ITEMS.registerItem(
+            "advanced_satellite_body",
+            properties -> new TierableComponentItem(TierableItemType.BODY, TierableItemTier.ADVANCED, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ELITE_SATELLITE_BODY = ITEMS.registerItem(
+            "elite_satellite_body",
+            properties -> new TierableComponentItem(TierableItemType.BODY, TierableItemTier.ELITE, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> BASIC_RECEIVER_COMPONENT = ITEMS.registerItem(
+            "receiver_component",
+            properties -> new TierableComponentItem(TierableItemType.RECEIVER, TierableItemTier.BASIC, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ADVANCED_RECEIVER_COMPONENT = ITEMS.registerItem(
+            "advanced_receiver_component",
+            properties -> new TierableComponentItem(TierableItemType.RECEIVER, TierableItemTier.ADVANCED, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ELITE_RECEIVER_COMPONENT = ITEMS.registerItem(
+            "elite_receiver_component",
+            properties -> new TierableComponentItem(TierableItemType.RECEIVER, TierableItemTier.ELITE, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> BASIC_TRANSMITTER_COMPONENT = ITEMS.registerItem(
+            "transmitter_component",
+            properties -> new TierableComponentItem(TierableItemType.TRANSMITTER, TierableItemTier.BASIC, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ADVANCED_TRANSMITTER_COMPONENT = ITEMS.registerItem(
+            "advanced_transmitter_component",
+            properties -> new TierableComponentItem(TierableItemType.TRANSMITTER, TierableItemTier.ADVANCED, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ELITE_TRANSMITTER_COMPONENT = ITEMS.registerItem(
+            "elite_transmitter_component",
+            properties -> new TierableComponentItem(TierableItemType.TRANSMITTER, TierableItemTier.ELITE, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> BASIC_TELESCOPE_LENS = ITEMS.registerItem(
+            "telescope_lens",
+            properties -> new TierableComponentItem(TierableItemType.TELESCOPE, TierableItemTier.BASIC, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ADVANCED_TELESCOPE_LENS = ITEMS.registerItem(
+            "advanced_telescope_lens",
+            properties -> new TierableComponentItem(TierableItemType.TELESCOPE, TierableItemTier.ADVANCED, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
+    public static final DeferredItem<Item> ELITE_TELESCOPE_LENS = ITEMS.registerItem(
+            "elite_telescope_lens",
+            properties -> new TierableComponentItem(TierableItemType.TELESCOPE, TierableItemTier.ELITE, properties),
+            new Item.Properties().stacksTo(16)
+    );
+
     public static final DeferredItem<Item> ORBITAL_DATA_CORE = ITEMS.registerItem(
             "orbital_data_core",
             Item::new,
@@ -261,6 +336,18 @@ public final class BeyondOrbitContent {
                         output.accept(SOLAR_PANEL.get());
                         output.accept(ADVANCED_SOLAR_PANEL.get());
                         output.accept(ELITE_SOLAR_PANEL.get());
+                        output.accept(BASIC_SATELLITE_BODY.get());
+                        output.accept(ADVANCED_SATELLITE_BODY.get());
+                        output.accept(ELITE_SATELLITE_BODY.get());
+                        output.accept(BASIC_RECEIVER_COMPONENT.get());
+                        output.accept(ADVANCED_RECEIVER_COMPONENT.get());
+                        output.accept(ELITE_RECEIVER_COMPONENT.get());
+                        output.accept(BASIC_TRANSMITTER_COMPONENT.get());
+                        output.accept(ADVANCED_TRANSMITTER_COMPONENT.get());
+                        output.accept(ELITE_TRANSMITTER_COMPONENT.get());
+                        output.accept(BASIC_TELESCOPE_LENS.get());
+                        output.accept(ADVANCED_TELESCOPE_LENS.get());
+                        output.accept(ELITE_TELESCOPE_LENS.get());
                         output.accept(ORBITAL_DATA_CORE.get());
                         output.accept(ROCKET_FRAME.get());
                         output.accept(SINGULARITY_MATRIX.get());

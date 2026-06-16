@@ -1,0 +1,7 @@
+{
+  "type": "telescope",
+  "tier": "basic",
+  "primary": 1,
+  "secondary": 200,
+  "tertiary": 1
+}
