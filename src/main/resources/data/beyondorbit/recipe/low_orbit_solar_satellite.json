@@ -2,13 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "GDG",
+    "GPG",
     "CSC",
     "ROR"
   ],
   "key": {
     "G": { "item": "minecraft:glass" },
-    "D": { "item": "minecraft:daylight_detector" },
+    "P": { "item": "beyondorbit:solar_panel" },
     "C": { "item": "minecraft:copper_ingot" },
     "S": { "item": "beyondorbit:basic_satellite" },
     "R": { "item": "minecraft:redstone" },

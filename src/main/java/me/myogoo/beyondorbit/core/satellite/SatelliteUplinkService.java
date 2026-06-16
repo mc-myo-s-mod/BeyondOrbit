@@ -2,6 +2,7 @@ package me.myogoo.beyondorbit.core.satellite;
 
 import me.myogoo.beyondorbit.core.BeyondOrbitCore;
 import me.myogoo.beyondorbit.core.Config;
+import me.myogoo.beyondorbit.core.blockentity.OrbitalReceiverBlockEntity;
 import me.myogoo.beyondorbit.core.blockentity.SatelliteUplinkBlockEntity;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyDefinition;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyRegistry;
@@ -10,6 +11,8 @@ import me.myogoo.beyondorbit.core.module.OrbitalModuleItem;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleTier;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
+import me.myogoo.beyondorbit.core.solar.SolarPanelItem;
+import me.myogoo.beyondorbit.core.solar.SolarPanelTier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -59,9 +62,14 @@ public final class SatelliteUplinkService {
             return true;
         }
 
-        Optional<CelestialBodyDefinition> target = defaultMiningTarget();
+        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
+        Optional<CelestialBodyDefinition> target = defaultMiningTarget(data);
         if (target.isEmpty()) {
-            player.sendSystemMessage(Component.translatable("message.beyondorbit.uplink.no_bodies"));
+            player.sendSystemMessage(Component.translatable(
+                    CelestialBodyRegistry.size() == 0
+                            ? "message.beyondorbit.uplink.no_bodies"
+                            : "message.beyondorbit.uplink.no_discovered_bodies"
+            ));
             return false;
         }
         if (serverLevel.getBlockEntity(pos) instanceof SatelliteUplinkBlockEntity uplink && !uplink.consumeDeployEnergy(player)) {
@@ -70,7 +78,6 @@ public final class SatelliteUplinkService {
 
         ResourceLocation satelliteId = satelliteIdFor(level, pos);
         CelestialBodyDefinition definition = target.get();
-        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
         data.getOrCreateState(definition);
         SatelliteMiningMissionState satellite = data.getOrCreateSatellite(satelliteId);
         int rolls = uplinkRolls(satellite.equippedModuleTier(OrbitalModuleType.MINING), satellite.equippedModuleTier(OrbitalModuleType.EFFICIENCY));
@@ -97,9 +104,14 @@ public final class SatelliteUplinkService {
             return true;
         }
 
-        Optional<CelestialBodyDefinition> defaultTarget = defaultMiningTarget();
+        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
+        Optional<CelestialBodyDefinition> defaultTarget = defaultMiningTarget(data);
         if (defaultTarget.isEmpty()) {
-            player.sendSystemMessage(Component.translatable("message.beyondorbit.uplink.no_bodies"));
+            player.sendSystemMessage(Component.translatable(
+                    CelestialBodyRegistry.size() == 0
+                            ? "message.beyondorbit.uplink.no_bodies"
+                            : "message.beyondorbit.launch_pad.no_discovered_bodies"
+            ));
             return false;
         }
         OrbitalModuleTier miningTier = OrbitalModuleTier.BASIC;
@@ -126,15 +138,16 @@ public final class SatelliteUplinkService {
             efficiencyTier = OrbitalModuleTier.ELITE;
         }
 
-        Optional<CelestialBodyDefinition> target = launchPadMiningTarget(miningTier, speedTier, efficiencyTier);
+        Optional<CelestialBodyDefinition> target = launchPadMiningTarget(data, miningTier, speedTier, efficiencyTier);
         CelestialBodyDefinition definition = target.orElse(defaultTarget.get());
         ResourceLocation satelliteId = launchPadSatelliteIdFor(level, pos);
-        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
         data.getOrCreateState(definition);
         SatelliteMiningMissionState satellite = data.getOrCreateSatellite(satelliteId);
         int rolls = launchPadRolls(miningTier, efficiencyTier);
         int intervalTicks = launchPadIntervalTicks(speedTier);
-        satellite.startMining(definition.id(), rolls, intervalTicks);
+        int launchTicks = launchPadLaunchTicks(speedTier);
+        int transitTicks = launchPadTransitTicks(definition, speedTier);
+        satellite.startLaunchPadMining(definition.id(), rolls, intervalTicks, launchTicks, transitTicks);
         satellite.equipModule(OrbitalModuleType.MINING, miningTier);
         if (speedTier != null) {
             satellite.equipModule(OrbitalModuleType.SPEED, speedTier);
@@ -168,28 +181,36 @@ public final class SatelliteUplinkService {
                     "message.beyondorbit.launch_pad.solar_already_deployed",
                     satelliteId.toString(),
                     data.lowOrbitSolarSatelliteCount(),
-                    Config.orbitalReceiverSolarFePerTick
+                    OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite()
             ));
             return false;
         }
 
+        SolarPanelTier panelTier = SolarPanelTier.BASIC;
         if (!player.getAbilities().instabuild) {
-            if (!consumeOne(player, BeyondOrbitContent.ROCKET_FRAME.get())) {
+            if (!hasOne(player, BeyondOrbitContent.ROCKET_FRAME.get())) {
                 player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.missing_rocket_frame"));
                 return false;
             }
+            SolarPanelTier consumedPanelTier = consumeBestSolarPanel(player);
+            if (consumedPanelTier == null) {
+                player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.missing_solar_panel"));
+                return false;
+            }
+            consumeOne(player, BeyondOrbitContent.ROCKET_FRAME.get());
+            panelTier = consumedPanelTier;
             satelliteStack.shrink(1);
         }
 
         SatelliteMiningMissionState satellite = data.getOrCreateSatellite(satelliteId);
-        satellite.markLowOrbitSolar();
+        satellite.markLowOrbitSolar(Config.lowOrbitSolarDeploymentTicks, panelTier, Config.lowOrbitSolarDistanceKm);
         data.setDirty();
 
         player.sendSystemMessage(Component.translatable(
                 "message.beyondorbit.launch_pad.solar_launched",
                 satelliteId.toString(),
                 data.lowOrbitSolarSatelliteCount(),
-                Config.orbitalReceiverSolarFePerTick
+                OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite()
         ));
         return true;
     }
@@ -349,8 +370,23 @@ public final class SatelliteUplinkService {
         return moduleAdjustedIntervalTicks(Config.launchPadTicksPerExtraction, speedTier);
     }
 
+    public static int launchPadLaunchTicks(OrbitalModuleTier speedTier) {
+        return moduleAdjustedPhaseTicks(Config.launchPadMissionPhaseTicks, speedTier);
+    }
+
+    public static int launchPadTransitTicks(CelestialBodyDefinition definition, OrbitalModuleTier speedTier) {
+        long ticks = (long) Config.launchPadTransitBaseTicks
+                + (long) definition.tier() * Config.launchPadTransitTicksPerTier
+                + (long) definition.distance() * Config.launchPadTransitTicksPerDistance;
+        if (speedTier != null) {
+            int reductionPercent = Math.min(100, Math.max(0, speedTier.level() * Config.launchPadTransitSpeedReductionPercentPerLevel));
+            ticks = ticks * (100L - reductionPercent) / 100L;
+        }
+        return clampTicks(ticks, 0, 72000);
+    }
+
     private static void applyEquippedModulesToMission(SatelliteMiningMissionState satellite, int baseRolls, int baseIntervalTicks) {
-        if (!satellite.active() || satellite.targetBody() == null) {
+        if (satellite.targetBody() == null || satellite.isLowOrbitSolar()) {
             return;
         }
         int rolls = moduleAdjustedRolls(
@@ -359,7 +395,7 @@ public final class SatelliteUplinkService {
                 satellite.equippedModuleTier(OrbitalModuleType.EFFICIENCY)
         );
         int intervalTicks = moduleAdjustedIntervalTicks(baseIntervalTicks, satellite.equippedModuleTier(OrbitalModuleType.SPEED));
-        satellite.startMining(satellite.targetBody(), rolls, intervalTicks);
+        satellite.updateMiningProfile(rolls, intervalTicks);
     }
 
     private static int moduleAdjustedRolls(int baseRolls, OrbitalModuleTier miningTier, OrbitalModuleTier efficiencyTier) {
@@ -376,6 +412,24 @@ public final class SatelliteUplinkService {
             intervalTicks -= speedTier.speedTickReduction();
         }
         return Math.max(1, intervalTicks);
+    }
+
+    private static int moduleAdjustedPhaseTicks(int baseTicks, OrbitalModuleTier speedTier) {
+        int ticks = baseTicks;
+        if (speedTier != null) {
+            ticks -= speedTier.speedTickReduction();
+        }
+        return Math.max(0, ticks);
+    }
+
+    private static int clampTicks(long ticks, int min, int max) {
+        if (ticks < min) {
+            return min;
+        }
+        if (ticks > max) {
+            return max;
+        }
+        return (int) ticks;
     }
 
     private static ItemStack moduleStackFor(OrbitalModuleType type, OrbitalModuleTier tier) {
@@ -401,7 +455,13 @@ public final class SatelliteUplinkService {
 
     public static Optional<CelestialBodyDefinition> defaultMiningTarget() {
         return CelestialBodyRegistry.all().stream()
-                .min(Comparator.comparingInt(CelestialBodyDefinition::tier).thenComparing(CelestialBodyDefinition::id));
+                .min(targetOrder());
+    }
+
+    public static Optional<CelestialBodyDefinition> defaultMiningTarget(BeyondOrbitSavedData data) {
+        return CelestialBodyRegistry.all().stream()
+                .filter(definition -> data.isCelestialBodyDiscovered(definition.id()))
+                .min(targetOrder());
     }
 
     public static Optional<CelestialBodyDefinition> launchPadMiningTarget(
@@ -413,9 +473,29 @@ public final class SatelliteUplinkService {
                 && speedTier == OrbitalModuleTier.ELITE
                 && efficiencyTier == OrbitalModuleTier.ELITE) {
             return CelestialBodyRegistry.all().stream()
-                    .max(Comparator.comparingInt(CelestialBodyDefinition::tier).thenComparing(CelestialBodyDefinition::id));
+                    .max(targetOrder());
         }
         return defaultMiningTarget();
+    }
+
+    public static Optional<CelestialBodyDefinition> launchPadMiningTarget(
+            BeyondOrbitSavedData data,
+            OrbitalModuleTier miningTier,
+            OrbitalModuleTier speedTier,
+            OrbitalModuleTier efficiencyTier
+    ) {
+        if (miningTier == OrbitalModuleTier.ELITE
+                && speedTier == OrbitalModuleTier.ELITE
+                && efficiencyTier == OrbitalModuleTier.ELITE) {
+            return CelestialBodyRegistry.all().stream()
+                    .filter(definition -> data.isCelestialBodyDiscovered(definition.id()))
+                    .max(targetOrder());
+        }
+        return defaultMiningTarget(data);
+    }
+
+    private static Comparator<CelestialBodyDefinition> targetOrder() {
+        return Comparator.comparingInt(CelestialBodyDefinition::tier).thenComparing(CelestialBodyDefinition::id);
     }
 
     private static boolean consumeOne(Player player, Item item) {
@@ -428,6 +508,35 @@ public final class SatelliteUplinkService {
             }
         }
         return false;
+    }
+
+    private static boolean hasOne(Player player, Item item) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            if (player.getInventory().getItem(i).is(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static SolarPanelTier consumeBestSolarPanel(Player player) {
+        SolarPanelTier bestTier = null;
+        int bestSlot = -1;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.getItem() instanceof SolarPanelItem panelItem) {
+                if (bestTier == null || panelItem.tier().level() > bestTier.level()) {
+                    bestTier = panelItem.tier();
+                    bestSlot = i;
+                }
+            }
+        }
+        if (bestSlot >= 0) {
+            ItemStack stack = player.getInventory().getItem(bestSlot);
+            stack.shrink(1);
+            player.getInventory().setChanged();
+        }
+        return bestTier;
     }
 
     private static OrbitalModuleTier consumeBestModule(Player player, OrbitalModuleType type) {

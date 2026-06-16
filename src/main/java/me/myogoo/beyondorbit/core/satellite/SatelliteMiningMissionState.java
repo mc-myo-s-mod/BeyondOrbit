@@ -11,6 +11,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleTier;
 import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
+import me.myogoo.beyondorbit.core.solar.SolarPanelTier;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
@@ -24,6 +25,11 @@ public final class SatelliteMiningMissionState {
     private static final String KIND_TAG = "kind";
     private static final String TARGET_BODY_TAG = "target_body";
     private static final String ACTIVE_TAG = "active";
+    private static final String MISSION_PHASE_TAG = "mission_phase";
+    private static final String PHASE_TICKS_REMAINING_TAG = "phase_ticks_remaining";
+    private static final String TRANSIT_TICKS_TAG = "transit_ticks";
+    private static final String SOLAR_PANEL_TIER_TAG = "solar_panel_tier";
+    private static final String ORBIT_DISTANCE_KM_TAG = "orbit_distance_km";
     private static final String TICKS_UNTIL_NEXT_EXTRACTION_TAG = "ticks_until_next_extraction";
     private static final String TICKS_PER_EXTRACTION_TAG = "ticks_per_extraction";
     private static final String ROLLS_PER_EXTRACTION_TAG = "rolls_per_extraction";
@@ -59,10 +65,42 @@ public final class SatelliteMiningMissionState {
         }
     }
 
+    public enum MissionPhase {
+        LAUNCHING("launching"),
+        IN_TRANSIT("in_transit"),
+        DEPLOYING("deploying"),
+        ACTIVE("active"),
+        IDLE("idle");
+
+        private final String serializedName;
+
+        MissionPhase(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        public String serializedName() {
+            return serializedName;
+        }
+
+        public static MissionPhase bySerializedName(String serializedName) {
+            for (MissionPhase phase : values()) {
+                if (phase.serializedName.equals(serializedName)) {
+                    return phase;
+                }
+            }
+            return null;
+        }
+    }
+
     private final ResourceLocation satelliteId;
     private SatelliteKind kind = SatelliteKind.MINING;
     private ResourceLocation targetBody;
     private boolean active;
+    private MissionPhase missionPhase = MissionPhase.IDLE;
+    private int phaseTicksRemaining;
+    private int transitTicks;
+    private SolarPanelTier solarPanelTier = SolarPanelTier.BASIC;
+    private int orbitDistanceKm;
     private int ticksUntilNextExtraction;
     private int ticksPerExtraction = 200;
     private int rollsPerExtraction = 1;
@@ -86,6 +124,29 @@ public final class SatelliteMiningMissionState {
             state.targetBody = ResourceLocation.parse(tag.getString(TARGET_BODY_TAG));
         }
         state.active = tag.getBoolean(ACTIVE_TAG);
+        if (tag.contains(MISSION_PHASE_TAG, Tag.TAG_STRING)) {
+            MissionPhase phase = MissionPhase.bySerializedName(tag.getString(MISSION_PHASE_TAG));
+            if (phase != null) {
+                state.missionPhase = phase;
+            }
+        } else if (state.isLowOrbitSolar()) {
+            // Saved worlds from the pre-phase solar implementation stored LOW_ORBIT_SOLAR
+            // satellites with active=false, while receivers counted every deployed solar
+            // satellite. Keep those existing satellites productive after migration.
+            state.missionPhase = MissionPhase.ACTIVE;
+        } else {
+            state.missionPhase = state.active ? MissionPhase.ACTIVE : MissionPhase.IDLE;
+        }
+        state.phaseTicksRemaining = Math.max(0, tag.getInt(PHASE_TICKS_REMAINING_TAG));
+        state.transitTicks = Math.max(0, tag.getInt(TRANSIT_TICKS_TAG));
+        if (tag.contains(SOLAR_PANEL_TIER_TAG, Tag.TAG_STRING)) {
+            SolarPanelTier tier = SolarPanelTier.bySerializedName(tag.getString(SOLAR_PANEL_TIER_TAG));
+            if (tier != null) {
+                state.solarPanelTier = tier;
+            }
+        }
+        state.orbitDistanceKm = Math.max(0, tag.getInt(ORBIT_DISTANCE_KM_TAG));
+        state.active = state.missionPhase == MissionPhase.ACTIVE && (state.active || state.isLowOrbitSolar());
         state.ticksUntilNextExtraction = Math.max(0, tag.getInt(TICKS_UNTIL_NEXT_EXTRACTION_TAG));
         state.ticksPerExtraction = Math.max(1, tag.getInt(TICKS_PER_EXTRACTION_TAG));
         state.rollsPerExtraction = Math.max(1, tag.getInt(ROLLS_PER_EXTRACTION_TAG));
@@ -121,6 +182,11 @@ public final class SatelliteMiningMissionState {
             tag.putString(TARGET_BODY_TAG, targetBody.toString());
         }
         tag.putBoolean(ACTIVE_TAG, active);
+        tag.putString(MISSION_PHASE_TAG, missionPhase.serializedName());
+        tag.putInt(PHASE_TICKS_REMAINING_TAG, phaseTicksRemaining);
+        tag.putInt(TRANSIT_TICKS_TAG, transitTicks);
+        tag.putString(SOLAR_PANEL_TIER_TAG, solarPanelTier.serializedName());
+        tag.putInt(ORBIT_DISTANCE_KM_TAG, orbitDistanceKm);
         tag.putInt(TICKS_UNTIL_NEXT_EXTRACTION_TAG, ticksUntilNextExtraction);
         tag.putInt(TICKS_PER_EXTRACTION_TAG, ticksPerExtraction);
         tag.putInt(ROLLS_PER_EXTRACTION_TAG, rollsPerExtraction);
@@ -151,21 +217,96 @@ public final class SatelliteMiningMissionState {
     public void startMining(ResourceLocation targetBody, int rollsPerExtraction, int ticksPerExtraction) {
         this.kind = SatelliteKind.MINING;
         this.targetBody = targetBody;
+        updateMiningProfile(rollsPerExtraction, ticksPerExtraction);
+        this.missionPhase = MissionPhase.ACTIVE;
+        this.phaseTicksRemaining = 0;
+        this.transitTicks = 0;
+        this.active = true;
+    }
+
+    public void startLaunchPadMining(ResourceLocation targetBody, int rollsPerExtraction, int ticksPerExtraction, int launchTicks) {
+        startLaunchPadMining(targetBody, rollsPerExtraction, ticksPerExtraction, launchTicks, 0);
+    }
+
+    public void startLaunchPadMining(ResourceLocation targetBody, int rollsPerExtraction, int ticksPerExtraction, int launchTicks, int transitTicks) {
+        this.kind = SatelliteKind.MINING;
+        this.targetBody = targetBody;
+        updateMiningProfile(rollsPerExtraction, ticksPerExtraction);
+        this.transitTicks = Math.max(0, transitTicks);
+        int safeLaunchTicks = Math.max(0, launchTicks);
+        if (safeLaunchTicks > 0) {
+            this.phaseTicksRemaining = safeLaunchTicks;
+            this.missionPhase = MissionPhase.LAUNCHING;
+            this.active = false;
+        } else if (this.transitTicks > 0) {
+            this.phaseTicksRemaining = this.transitTicks;
+            this.transitTicks = 0;
+            this.missionPhase = MissionPhase.IN_TRANSIT;
+            this.active = false;
+        } else {
+            this.phaseTicksRemaining = 0;
+            this.missionPhase = MissionPhase.ACTIVE;
+            this.active = true;
+        }
+    }
+
+    public void updateMiningProfile(int rollsPerExtraction, int ticksPerExtraction) {
         this.rollsPerExtraction = Math.max(1, rollsPerExtraction);
         this.ticksPerExtraction = Math.max(1, ticksPerExtraction);
-        this.ticksUntilNextExtraction = this.ticksPerExtraction;
-        this.active = true;
+        if (this.active) {
+            this.ticksUntilNextExtraction = Math.min(Math.max(1, this.ticksUntilNextExtraction), this.ticksPerExtraction);
+        } else {
+            this.ticksUntilNextExtraction = this.ticksPerExtraction;
+        }
     }
 
     public void stopMining() {
         this.active = false;
+        this.missionPhase = MissionPhase.IDLE;
+        this.phaseTicksRemaining = 0;
+        this.transitTicks = 0;
     }
 
     public void markLowOrbitSolar() {
+        markLowOrbitSolar(0, SolarPanelTier.BASIC, 0);
+    }
+
+    public void markLowOrbitSolar(int deploymentTicks) {
+        markLowOrbitSolar(deploymentTicks, SolarPanelTier.BASIC, 0);
+    }
+
+    public void markLowOrbitSolar(int deploymentTicks, SolarPanelTier panelTier, int orbitDistanceKm) {
         this.kind = SatelliteKind.LOW_ORBIT_SOLAR;
         this.targetBody = null;
-        this.active = false;
+        this.solarPanelTier = panelTier == null ? SolarPanelTier.BASIC : panelTier;
+        this.orbitDistanceKm = Math.max(0, orbitDistanceKm);
+        this.phaseTicksRemaining = Math.max(0, deploymentTicks);
+        this.transitTicks = 0;
+        this.missionPhase = this.phaseTicksRemaining > 0 ? MissionPhase.DEPLOYING : MissionPhase.ACTIVE;
+        this.active = this.missionPhase == MissionPhase.ACTIVE;
         this.ticksUntilNextExtraction = 0;
+    }
+
+    public boolean advanceMissionPhase() {
+        if (missionPhase == MissionPhase.ACTIVE || missionPhase == MissionPhase.IDLE) {
+            return false;
+        }
+        if (phaseTicksRemaining > 0) {
+            phaseTicksRemaining--;
+        }
+        if (phaseTicksRemaining > 0) {
+            return true;
+        }
+        if (missionPhase == MissionPhase.LAUNCHING && transitTicks > 0) {
+            missionPhase = MissionPhase.IN_TRANSIT;
+            phaseTicksRemaining = transitTicks;
+            transitTicks = 0;
+            active = false;
+            return true;
+        }
+        missionPhase = MissionPhase.ACTIVE;
+        active = true;
+        return true;
     }
 
     public boolean isLowOrbitSolar() {
@@ -248,6 +389,8 @@ public final class SatelliteMiningMissionState {
         }
         if (result.bodyDepleted()) {
             active = false;
+            missionPhase = MissionPhase.IDLE;
+            transitTicks = 0;
         }
         return result;
     }
@@ -262,6 +405,26 @@ public final class SatelliteMiningMissionState {
 
     public boolean active() {
         return active;
+    }
+
+    public MissionPhase missionPhase() {
+        return missionPhase;
+    }
+
+    public int phaseTicksRemaining() {
+        return phaseTicksRemaining;
+    }
+
+    public int transitTicks() {
+        return transitTicks;
+    }
+
+    public SolarPanelTier solarPanelTier() {
+        return solarPanelTier;
+    }
+
+    public int orbitDistanceKm() {
+        return orbitDistanceKm;
     }
 
     public int ticksUntilNextExtraction() {

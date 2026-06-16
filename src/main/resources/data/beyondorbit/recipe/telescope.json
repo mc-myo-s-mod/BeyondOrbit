@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " G ",
+    "CDC",
+    "IRI"
+  ],
+  "key": {
+    "G": { "item": "minecraft:tinted_glass" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "D": { "item": "beyondorbit:orbital_data_core" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "R": { "item": "minecraft:redstone" }
+  },
+  "result": {
+    "id": "beyondorbit:telescope",
+    "count": 1
+  }
+}

@@ -23,10 +23,13 @@ import me.myogoo.beyondorbit.core.module.OrbitalModuleType;
 import me.myogoo.beyondorbit.core.registry.BeyondOrbitContent;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import me.myogoo.beyondorbit.core.satellite.SatelliteUplinkService;
+import me.myogoo.beyondorbit.core.solar.SolarPanelItem;
+import me.myogoo.beyondorbit.core.solar.SolarPanelTier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
@@ -125,9 +128,13 @@ public final class CelestialResourceGameTests {
         ResourceLocation receiverBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "orbital_receiver");
         ResourceLocation itemReceiverBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "item_receiver");
         ResourceLocation satelliteMonitorBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "satellite_monitor");
+        ResourceLocation telescopeBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "telescope");
         ResourceLocation moduleAssemblerBlockId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "module_assembler");
         ResourceLocation singularityMatrixItemId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "singularity_matrix");
         ResourceLocation lowOrbitSolarSatelliteItemId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "low_orbit_solar_satellite");
+        ResourceLocation solarPanelItemId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "solar_panel");
+        ResourceLocation advancedSolarPanelItemId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "advanced_solar_panel");
+        ResourceLocation eliteSolarPanelItemId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "elite_solar_panel");
 
         if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.BASIC_SATELLITE.get()).equals(satelliteItemId)) {
             throw new AssertionError("Expected basic satellite item to be registered as " + satelliteItemId);
@@ -150,11 +157,27 @@ public final class CelestialResourceGameTests {
         if (!BuiltInRegistries.BLOCK.getKey(BeyondOrbitContent.SATELLITE_MONITOR.get()).equals(satelliteMonitorBlockId)) {
             throw new AssertionError("Expected satellite monitor block to be registered as " + satelliteMonitorBlockId);
         }
+        if (!BuiltInRegistries.BLOCK.getKey(BeyondOrbitContent.TELESCOPE.get()).equals(telescopeBlockId)) {
+            throw new AssertionError("Expected telescope block to be registered as " + telescopeBlockId);
+        }
         if (!BuiltInRegistries.BLOCK.getKey(BeyondOrbitContent.MODULE_ASSEMBLER.get()).equals(moduleAssemblerBlockId)) {
             throw new AssertionError("Expected module assembler block to be registered as " + moduleAssemblerBlockId);
         }
         if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.SINGULARITY_MATRIX.get()).equals(singularityMatrixItemId)) {
             throw new AssertionError("Expected singularity matrix item to be registered as " + singularityMatrixItemId);
+        }
+        if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.SOLAR_PANEL.get()).equals(solarPanelItemId)) {
+            throw new AssertionError("Expected basic solar panel item to be registered as " + solarPanelItemId);
+        }
+        if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.ADVANCED_SOLAR_PANEL.get()).equals(advancedSolarPanelItemId)) {
+            throw new AssertionError("Expected advanced solar panel item to be registered as " + advancedSolarPanelItemId);
+        }
+        if (!BuiltInRegistries.ITEM.getKey(BeyondOrbitContent.ELITE_SOLAR_PANEL.get()).equals(eliteSolarPanelItemId)) {
+            throw new AssertionError("Expected elite solar panel item to be registered as " + eliteSolarPanelItemId);
+        }
+        if (!(BeyondOrbitContent.ELITE_SOLAR_PANEL.get() instanceof SolarPanelItem elitePanel)
+                || elitePanel.tier() != SolarPanelTier.ELITE) {
+            throw new AssertionError("Expected elite solar panel to expose ELITE panel tier");
         }
         if (!(BeyondOrbitContent.ELITE_SPEED_MODULE.get() instanceof OrbitalModuleItem eliteSpeedModule)
                 || eliteSpeedModule.moduleType() != OrbitalModuleType.SPEED
@@ -188,6 +211,12 @@ public final class CelestialResourceGameTests {
         if (!BeyondOrbitContent.SATELLITE_MONITOR.get().defaultBlockState().is(BlockTags.NEEDS_IRON_TOOL)) {
             throw new AssertionError("Expected satellite monitor to require an iron-tier tool");
         }
+        if (!BeyondOrbitContent.TELESCOPE.get().defaultBlockState().is(BlockTags.MINEABLE_WITH_PICKAXE)) {
+            throw new AssertionError("Expected telescope to be tagged as mineable with a pickaxe");
+        }
+        if (!BeyondOrbitContent.TELESCOPE.get().defaultBlockState().is(BlockTags.NEEDS_IRON_TOOL)) {
+            throw new AssertionError("Expected telescope to require an iron-tier tool");
+        }
         if (!BeyondOrbitContent.MODULE_ASSEMBLER.get().defaultBlockState().is(BlockTags.MINEABLE_WITH_PICKAXE)) {
             throw new AssertionError("Expected module assembler to be tagged as mineable with a pickaxe");
         }
@@ -216,30 +245,78 @@ public final class CelestialResourceGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", timeoutTicks = 20)
-    public static void eliteLaunchPadLoadoutTargetsDeepSpaceBody(GameTestHelper helper) {
-        ResourceLocation defaultTargetId = SatelliteUplinkService.defaultMiningTarget()
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void telescopeUseDiscoversBodyAndPersistsSavedData(GameTestHelper helper) {
+        BlockPos telescopePos = new BlockPos(1, 2, 1);
+        BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
+        ResourceLocation targetBody = savedData.nextUndiscoveredCelestialBody()
                 .map(CelestialBodyDefinition::id)
-                .orElseThrow(() -> new AssertionError("Expected at least one default celestial mining target"));
-        ResourceLocation eliteTargetId = SatelliteUplinkService.launchPadMiningTarget(
-                        OrbitalModuleTier.ELITE,
-                        OrbitalModuleTier.ELITE,
-                        OrbitalModuleTier.ELITE
-                )
-                .map(CelestialBodyDefinition::id)
-                .orElseThrow(() -> new AssertionError("Expected elite launch pad loadout to resolve a celestial target"));
+                .orElseGet(() -> CelestialBodyRegistry.all().stream()
+                        .map(CelestialBodyDefinition::id)
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("Expected at least one celestial body for Telescope test")));
 
+        helper.setBlock(telescopePos, BeyondOrbitContent.TELESCOPE.get());
+        Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        helper.useBlock(telescopePos, player);
+
+        if (!savedData.isCelestialBodyDiscovered(targetBody)) {
+            throw new AssertionError("Expected Telescope use or prior discovery to include " + targetBody);
+        }
+        if (savedData.discoveredCelestialBodiesView().isEmpty()) {
+            throw new AssertionError("Expected discovered celestial body view to include Telescope observation results");
+        }
+
+        CompoundTag savedTag = savedData.save(new CompoundTag(), helper.getLevel().registryAccess());
+        BeyondOrbitSavedData loaded = BeyondOrbitSavedData.load(savedTag, helper.getLevel().registryAccess());
+        if (!loaded.isCelestialBodyDiscovered(targetBody)) {
+            throw new AssertionError("Expected discovered celestial body to survive SavedData save/load: " + targetBody);
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 20)
+    public static void launchPadTargetSelectionRequiresDiscoveredBodies(GameTestHelper helper) {
         ResourceLocation expectedDefault = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "crimson_asteroid");
         ResourceLocation expectedElite = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "void_maw");
-        if (!defaultTargetId.equals(expectedDefault)) {
-            throw new AssertionError("Expected default mining target to remain " + expectedDefault + ", got " + defaultTargetId);
-        }
-        if (!eliteTargetId.equals(expectedElite)) {
-            throw new AssertionError("Expected elite launch pad target to be " + expectedElite + ", got " + eliteTargetId);
-        }
 
+        CelestialBodyDefinition defaultBody = CelestialBodyRegistry.get(expectedDefault)
+                .orElseThrow(() -> new AssertionError("Expected default celestial body to be loaded: " + expectedDefault));
         CelestialBodyDefinition deepSpace = CelestialBodyRegistry.get(expectedElite)
                 .orElseThrow(() -> new AssertionError("Expected deep space celestial body to be loaded: " + expectedElite));
+
+        BeyondOrbitSavedData discoveryData = new BeyondOrbitSavedData();
+        if (SatelliteUplinkService.defaultMiningTarget(discoveryData).isPresent()) {
+            throw new AssertionError("Expected no default mining target before any celestial body is discovered");
+        }
+        if (SatelliteUplinkService.launchPadMiningTarget(discoveryData, OrbitalModuleTier.ELITE, OrbitalModuleTier.ELITE, OrbitalModuleTier.ELITE).isPresent()) {
+            throw new AssertionError("Expected no elite launch target before any celestial body is discovered");
+        }
+
+        discoveryData.discoverCelestialBody(defaultBody.id());
+        ResourceLocation defaultTargetId = SatelliteUplinkService.defaultMiningTarget(discoveryData)
+                .map(CelestialBodyDefinition::id)
+                .orElseThrow(() -> new AssertionError("Expected discovered default celestial mining target"));
+        if (!defaultTargetId.equals(expectedDefault)) {
+            throw new AssertionError("Expected default discovered mining target to be " + expectedDefault + ", got " + defaultTargetId);
+        }
+
+        ResourceLocation eliteWithOnlyDefault = SatelliteUplinkService.launchPadMiningTarget(discoveryData, OrbitalModuleTier.ELITE, OrbitalModuleTier.ELITE, OrbitalModuleTier.ELITE)
+                .map(CelestialBodyDefinition::id)
+                .orElseThrow(() -> new AssertionError("Expected elite launch target to fall back to discovered body"));
+        if (!eliteWithOnlyDefault.equals(expectedDefault)) {
+            throw new AssertionError("Expected elite launch target to ignore undiscovered " + expectedElite + ", got " + eliteWithOnlyDefault);
+        }
+
+        discoveryData.discoverCelestialBody(deepSpace.id());
+        ResourceLocation eliteTargetId = SatelliteUplinkService.launchPadMiningTarget(discoveryData, OrbitalModuleTier.ELITE, OrbitalModuleTier.ELITE, OrbitalModuleTier.ELITE)
+                .map(CelestialBodyDefinition::id)
+                .orElseThrow(() -> new AssertionError("Expected elite launch pad loadout to resolve a discovered celestial target"));
+        if (!eliteTargetId.equals(expectedElite)) {
+            throw new AssertionError("Expected elite launch pad target to be discovered " + expectedElite + ", got " + eliteTargetId);
+        }
+
         ResourceLocation matrixId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "singularity_matrix");
         boolean exposesMatrix = deepSpace.resources().stream().anyMatch(resource -> resource.id().equals(matrixId));
         if (!exposesMatrix) {
@@ -256,6 +333,7 @@ public final class CelestialResourceGameTests {
 
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         int solarSatellitesBefore = savedData.lowOrbitSolarSatelliteCount();
+        int activeSolarSatellitesBefore = savedData.activeLowOrbitSolarSatelliteCount();
 
         helper.setBlock(padPos, BeyondOrbitContent.LAUNCH_PAD.get());
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -263,6 +341,7 @@ public final class CelestialResourceGameTests {
         ItemStack satelliteStack = new ItemStack(BeyondOrbitContent.LOW_ORBIT_SOLAR_SATELLITE.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, satelliteStack);
         player.getInventory().add(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()));
+        player.getInventory().add(new ItemStack(BeyondOrbitContent.ADVANCED_SOLAR_PANEL.get()));
 
         helper.useBlock(padPos, player);
         if (!satelliteStack.isEmpty()) {
@@ -270,6 +349,9 @@ public final class CelestialResourceGameTests {
         }
         if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()))) {
             throw new AssertionError("Expected Launch Pad to consume one Rocket Frame for Low Orbit Solar Satellite launch");
+        }
+        if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ADVANCED_SOLAR_PANEL.get()))) {
+            throw new AssertionError("Expected Launch Pad to consume one Advanced Solar Panel for Low Orbit Solar Satellite launch");
         }
 
         int solarSatellitesAfter = savedData.lowOrbitSolarSatelliteCount();
@@ -284,17 +366,33 @@ public final class CelestialResourceGameTests {
         if (!solarSatellite.isLowOrbitSolar()) {
             throw new AssertionError("Expected linked satellite state to be marked as low orbit solar: " + solarSatelliteId);
         }
-        if (solarSatellite.active() || solarSatellite.targetBody() != null) {
-            throw new AssertionError("Expected Low Orbit Solar Satellite state not to start an active mining mission: " + solarSatelliteId);
+        if (solarSatellite.active() || solarSatellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.DEPLOYING || solarSatellite.targetBody() != null) {
+            throw new AssertionError("Expected Low Orbit Solar Satellite state to start deploying without mining: " + solarSatelliteId);
+        }
+        if (solarSatellite.solarPanelTier() != SolarPanelTier.ADVANCED) {
+            throw new AssertionError("Expected Low Orbit Solar Satellite to remember Advanced Solar Panel tier");
+        }
+        if (solarSatellite.orbitDistanceKm() != Config.lowOrbitSolarDistanceKm) {
+            throw new AssertionError("Expected Low Orbit Solar Satellite to remember configured low orbit distance");
         }
 
         helper.setBlock(receiverPos, BeyondOrbitContent.ORBITAL_RECEIVER.get());
         OrbitalReceiverBlockEntity receiver = (OrbitalReceiverBlockEntity) helper.getBlockEntity(receiverPos);
         OrbitalReceiverBlockEntity.serverTick(helper.getLevel(), helper.absolutePos(receiverPos), receiver.getBlockState(), receiver);
-        if (receiver.energyStored() < Config.orbitalReceiverSolarFePerTick) {
-            throw new AssertionError("Expected Orbital Receiver to receive at least "
-                    + Config.orbitalReceiverSolarFePerTick + " FE/t from a launched Low Orbit Solar Satellite, got "
-                    + receiver.energyStored());
+        int energyBeforeNewSolarActivation = receiver.energyStored();
+
+        for (int i = 0; i < Config.lowOrbitSolarDeploymentTicks; i++) {
+            savedData.tickSatellites(RandomSource.create(7000L + i));
+        }
+        if (!solarSatellite.active() || solarSatellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.ACTIVE) {
+            throw new AssertionError("Expected Low Orbit Solar Satellite to become ACTIVE after deployment delay");
+        }
+        OrbitalReceiverBlockEntity.serverTick(helper.getLevel(), helper.absolutePos(receiverPos), receiver.getBlockState(), receiver);
+        int addedByActivationTick = receiver.energyStored() - energyBeforeNewSolarActivation;
+        int expectedNewSatelliteOutput = OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite(solarSatellite);
+        if (addedByActivationTick < expectedNewSatelliteOutput) {
+            throw new AssertionError("Expected Orbital Receiver to receive at least the new solar satellite's FE after deployment, expected +"
+                    + expectedNewSatelliteOutput + ", got +" + addedByActivationTick);
         }
 
         helper.succeed();
@@ -309,6 +407,7 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
 
         helper.setBlock(uplinkPos, BeyondOrbitContent.SATELLITE_UPLINK.get());
         SatelliteUplinkBlockEntity uplink = (SatelliteUplinkBlockEntity) helper.getBlockEntity(uplinkPos);
@@ -370,6 +469,7 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
         SatelliteMiningMissionState satellite = savedData.getOrCreateSatellite(satelliteId);
         int solarSatellitesBeforeReceiverTick = savedData.lowOrbitSolarSatelliteCount();
         satellite.startMining(bodyId, 32, 1);
@@ -472,6 +572,7 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
         SatelliteMiningMissionState satellite = savedData.getOrCreateSatellite(satelliteId);
         satellite.startMining(bodyId, 16, 1);
         for (int i = 0; i < 8 && satellite.totalExtractedView().isEmpty(); i++) {
@@ -550,6 +651,7 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
 
         helper.setBlock(padPos, BeyondOrbitContent.LAUNCH_PAD.get());
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -596,6 +698,7 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
 
         helper.setBlock(padPos, BeyondOrbitContent.LAUNCH_PAD.get());
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -618,22 +721,36 @@ public final class CelestialResourceGameTests {
         ResourceLocation satelliteId = SatelliteUplinkService.launchPadSatelliteIdFor(helper.getLevel(), helper.absolutePos(padPos));
         SatelliteMiningMissionState satellite = savedData.getSatellite(satelliteId)
                 .orElseThrow(() -> new AssertionError("Expected launch pad to create satellite " + satelliteId));
-        if (!satellite.active()) {
-            throw new AssertionError("Expected launch pad satellite to start an active mission");
+        if (satellite.active() || satellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.LAUNCHING) {
+            throw new AssertionError("Expected launch pad satellite to start in a non-active launch phase");
         }
 
         LaunchPadMenu launchPadMenu = new LaunchPadMenu(0, player.getInventory(), helper.getLevel(), helper.absolutePos(padPos));
         if (!launchPadMenu.hasSatellite()) {
             throw new AssertionError("Expected Launch Pad menu to detect the linked satellite");
         }
-        if (!launchPadMenu.active()) {
-            throw new AssertionError("Expected Launch Pad menu to mirror the active satellite state");
+        if (launchPadMenu.active()) {
+            throw new AssertionError("Expected Launch Pad menu to mirror non-active launch phase before arrival");
         }
         if (launchPadMenu.rollsPerExtraction() != satellite.rollsPerExtraction()) {
             throw new AssertionError("Expected Launch Pad menu to mirror mission rolls");
         }
         if (launchPadMenu.ticksPerExtraction() != satellite.ticksPerExtraction()) {
             throw new AssertionError("Expected Launch Pad menu to mirror mission interval");
+        }
+
+        for (int i = 0; i < Config.launchPadMissionPhaseTicks; i++) {
+            savedData.tickSatellites(RandomSource.create(8000L + i));
+        }
+        if (satellite.active() || satellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.IN_TRANSIT) {
+            throw new AssertionError("Expected launch pad satellite to enter IN_TRANSIT after launch delay");
+        }
+        int transitTicks = SatelliteUplinkService.launchPadTransitTicks(definition, null);
+        for (int i = 0; i < transitTicks; i++) {
+            savedData.tickSatellites(RandomSource.create(8100L + i));
+        }
+        if (!satellite.active() || satellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.ACTIVE) {
+            throw new AssertionError("Expected launch pad satellite to become ACTIVE after launch and transit delays");
         }
 
         satellite.startMining(bodyId, Config.maxExtractionRollsPerOperation, 1);
@@ -672,6 +789,7 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
 
         helper.setBlock(padPos, BeyondOrbitContent.LAUNCH_PAD.get());
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -724,6 +842,7 @@ public final class CelestialResourceGameTests {
                 .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
         savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
 
         helper.setBlock(uplinkPos, BeyondOrbitContent.SATELLITE_UPLINK.get());
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -779,4 +898,117 @@ public final class CelestialResourceGameTests {
 
         helper.succeed();
     }
+
+    @GameTest(template = "empty", timeoutTicks = 160)
+    public static void launchPadMiningMissionUsesLaunchThenTransitPhases(GameTestHelper helper) {
+        ResourceLocation bodyId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "crimson_asteroid");
+        ResourceLocation satelliteId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "phase_chain_test_satellite");
+        CelestialBodyDefinition definition = CelestialBodyRegistry.get(bodyId)
+                .orElseThrow(() -> new AssertionError("Expected datapack celestial body to be loaded: " + bodyId));
+        BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
+        savedData.resetState(definition);
+        savedData.discoverCelestialBody(bodyId);
+        SatelliteMiningMissionState satellite = savedData.getOrCreateSatellite(satelliteId);
+        satellite.startLaunchPadMining(bodyId, 1, 20, 2, 3);
+        if (satellite.active() || satellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.LAUNCHING) {
+            throw new AssertionError("Expected mission to start LAUNCHING");
+        }
+        for (int i = 0; i < 2; i++) {
+            savedData.tickSatellites(RandomSource.create(9000L + i));
+        }
+        if (satellite.active() || satellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.IN_TRANSIT) {
+            throw new AssertionError("Expected mission to enter IN_TRANSIT after launch phase");
+        }
+        if (satellite.phaseTicksRemaining() != 3) {
+            throw new AssertionError("Expected transit phase to start with 3 ticks remaining, got " + satellite.phaseTicksRemaining());
+        }
+        for (int i = 0; i < 3; i++) {
+            savedData.tickSatellites(RandomSource.create(9100L + i));
+        }
+        if (!satellite.active() || satellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.ACTIVE) {
+            throw new AssertionError("Expected mission to become ACTIVE after transit phase");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 20)
+    public static void launchPadTransitTimeUsesTargetTierDistanceAndSpeed(GameTestHelper helper) {
+        CelestialBodyDefinition asteroid = CelestialBodyRegistry.get(ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "crimson_asteroid"))
+                .orElseThrow(() -> new AssertionError("Expected crimson_asteroid"));
+        CelestialBodyDefinition voidMaw = CelestialBodyRegistry.get(ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "void_maw"))
+                .orElseThrow(() -> new AssertionError("Expected void_maw"));
+        if (voidMaw.distance() <= asteroid.distance()) {
+            throw new AssertionError("Expected void_maw to have greater datapack distance than crimson_asteroid");
+        }
+        int asteroidBasicTransit = SatelliteUplinkService.launchPadTransitTicks(asteroid, null);
+        int voidBasicTransit = SatelliteUplinkService.launchPadTransitTicks(voidMaw, null);
+        int voidEliteTransit = SatelliteUplinkService.launchPadTransitTicks(voidMaw, OrbitalModuleTier.ELITE);
+        if (voidBasicTransit <= asteroidBasicTransit) {
+            throw new AssertionError("Expected higher-tier/distance target to take longer; asteroid=" + asteroidBasicTransit + ", void=" + voidBasicTransit);
+        }
+        if (voidEliteTransit >= voidBasicTransit) {
+            throw new AssertionError("Expected elite speed module to reduce transit time; basic=" + voidBasicTransit + ", elite=" + voidEliteTransit);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void solarPanelTierAndDistanceLossAffectReceiverStats(GameTestHelper helper) {
+        BlockPos receiverPos = new BlockPos(1, 2, 1);
+        BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
+        ResourceLocation basicId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "solar_basic_stats_test");
+        ResourceLocation eliteId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "solar_elite_stats_test");
+        SatelliteMiningMissionState basic = savedData.getOrCreateSatellite(basicId);
+        basic.markLowOrbitSolar(0, SolarPanelTier.BASIC, 1000);
+        SatelliteMiningMissionState elite = savedData.getOrCreateSatellite(eliteId);
+        elite.markLowOrbitSolar(0, SolarPanelTier.ELITE, 3000);
+        int expectedGross = OrbitalReceiverBlockEntity.solarGrossOutputPerActiveSatellite(basic)
+                + OrbitalReceiverBlockEntity.solarGrossOutputPerActiveSatellite(elite);
+        int expectedNet = OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite(basic)
+                + OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite(elite);
+        if (expectedNet >= expectedGross) {
+            throw new AssertionError("Expected distance transmission loss to reduce net output, gross=" + expectedGross + ", net=" + expectedNet);
+        }
+        helper.setBlock(receiverPos, BeyondOrbitContent.ORBITAL_RECEIVER.get());
+        OrbitalReceiverBlockEntity receiver = (OrbitalReceiverBlockEntity) helper.getBlockEntity(receiverPos);
+        OrbitalReceiverBlockEntity.serverTick(helper.getLevel(), helper.absolutePos(receiverPos), receiver.getBlockState(), receiver);
+        if (receiver.energyStored() < expectedNet) {
+            throw new AssertionError("Expected receiver to store tiered distance-loss solar output, expected at least " + expectedNet + ", got " + receiver.energyStored());
+        }
+        Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        OrbitalReceiverMenu menu = new OrbitalReceiverMenu(0, player.getInventory(), receiver);
+        if (menu.activeSolarSatellites() < 2) {
+            throw new AssertionError("Expected receiver menu to expose active solar satellite count");
+        }
+        if (menu.solarGrossGenerationPerTick() < expectedGross) {
+            throw new AssertionError("Expected receiver menu to expose gross solar FE/t");
+        }
+        if (menu.solarTransmissionLossPercent() <= 0) {
+            throw new AssertionError("Expected receiver menu to expose positive transmission loss percent");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 20)
+    public static void lowOrbitSolarSatellitePersistsTierAndDistance(GameTestHelper helper) {
+        ResourceLocation satelliteId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "solar_persistence_test");
+        SatelliteMiningMissionState satellite = new SatelliteMiningMissionState(satelliteId);
+        satellite.markLowOrbitSolar(5, SolarPanelTier.ELITE, 42000);
+        CompoundTag tag = satellite.save();
+        SatelliteMiningMissionState loaded = SatelliteMiningMissionState.load(tag);
+        if (!loaded.isLowOrbitSolar()) {
+            throw new AssertionError("Expected loaded satellite to remain low orbit solar");
+        }
+        if (loaded.solarPanelTier() != SolarPanelTier.ELITE) {
+            throw new AssertionError("Expected loaded satellite to preserve elite solar panel tier");
+        }
+        if (loaded.orbitDistanceKm() != 42000) {
+            throw new AssertionError("Expected loaded satellite to preserve orbit distance");
+        }
+        if (loaded.missionPhase() != SatelliteMiningMissionState.MissionPhase.DEPLOYING) {
+            throw new AssertionError("Expected loaded satellite to preserve deploying phase");
+        }
+        helper.succeed();
+    }
+
 }

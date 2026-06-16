@@ -67,6 +67,22 @@ public class OrbitalReceiverMenu extends AbstractContainerMenu {
         return data.get(7);
     }
 
+    public int deployedSolarSatellites() {
+        return data.get(8);
+    }
+
+    public int activeSolarSatellites() {
+        return data.get(9);
+    }
+
+    public int solarGrossGenerationPerTick() {
+        return data.get(10);
+    }
+
+    public int solarTransmissionLossPercent() {
+        return data.get(11);
+    }
+
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         return ItemStack.EMPTY;

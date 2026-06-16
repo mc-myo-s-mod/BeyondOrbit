@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_solar_panel": {
+    "has_daylight_detector": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": "beyondorbit:solar_panel"
+            "items": "minecraft:daylight_detector"
           }
         ]
       }
@@ -14,10 +14,10 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "beyondorbit:low_orbit_solar_satellite"
+        "recipe": "beyondorbit:solar_panel"
       }
     }
   },
-  "requirements": [["has_the_recipe", "has_solar_panel"]],
-  "rewards": { "recipes": ["beyondorbit:low_orbit_solar_satellite"] }
+  "requirements": [["has_the_recipe", "has_daylight_detector"]],
+  "rewards": { "recipes": ["beyondorbit:solar_panel"] }
 }
