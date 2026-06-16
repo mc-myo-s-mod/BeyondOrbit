@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "beyondorbit:item/solar_panel"
+    "layer0": "beyondorbit:item/elite_solar_panel"
   }
 }
