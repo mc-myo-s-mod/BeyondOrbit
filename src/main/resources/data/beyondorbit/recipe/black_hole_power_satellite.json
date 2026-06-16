@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ESE",
+    "RMR",
+    "ESE"
+  ],
+  "key": {
+    "E": {
+      "item": "minecraft:ender_eye"
+    },
+    "S": {
+      "item": "beyondorbit:low_orbit_solar_satellite"
+    },
+    "R": {
+      "item": "minecraft:redstone_block"
+    },
+    "M": {
+      "item": "beyondorbit:singularity_matrix"
+    }
+  },
+  "result": {
+    "id": "beyondorbit:black_hole_power_satellite",
+    "count": 1
+  }
+}

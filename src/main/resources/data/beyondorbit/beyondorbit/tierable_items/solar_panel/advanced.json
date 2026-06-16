@@ -1,0 +1,7 @@
+{
+  "type": "solar_panel",
+  "tier": "advanced",
+  "primary": 150,
+  "secondary": 4000,
+  "tertiary": 150
+}

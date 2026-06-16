@@ -33,6 +33,13 @@ public class LaunchPadBlock extends Block {
             }
             return ItemInteractionResult.sidedSuccess(true);
         }
+        if (stack.is(BeyondOrbitContent.BLACK_HOLE_POWER_SATELLITE.get())) {
+            if (!level.isClientSide()) {
+                boolean launched = SatelliteUplinkService.launchBlackHolePowerSatelliteFromPad(level, pos, player, stack);
+                return launched ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+            }
+            return ItemInteractionResult.sidedSuccess(true);
+        }
         if (stack.is(BeyondOrbitContent.LOW_ORBIT_SOLAR_SATELLITE.get())) {
             if (!level.isClientSide()) {
                 boolean launched = SatelliteUplinkService.launchLowOrbitSolarSatelliteFromPad(level, pos, player, stack);

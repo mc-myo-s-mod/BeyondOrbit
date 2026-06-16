@@ -238,7 +238,7 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
         if (data.activeEnergyStorageSatelliteCount() > 0) {
             received = extractStoredOrbitalEnergy(data, capacityLeft);
         } else {
-            received = solarGenerationPerTick(data);
+            received = Math.min(capacityLeft, orbitalGenerationPerTick(data));
         }
         if (received <= 0) {
             return false;
@@ -332,6 +332,32 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
         return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, generated));
     }
 
+    public static int blackHoleGrossOutputPerActiveSatellite(SatelliteMiningMissionState satellite) {
+        if (satellite == null || !satellite.isBlackHolePower()) {
+            return 0;
+        }
+        return Math.max(0, Config.blackHolePowerFePerTick);
+    }
+
+    public static int blackHoleOutputPerActiveSatellite(SatelliteMiningMissionState satellite) {
+        int gross = blackHoleGrossOutputPerActiveSatellite(satellite);
+        int lossPercent = transmissionLossPercentForDistance(satellite.orbitDistanceKm());
+        long net = (long) gross * (100L - lossPercent) / 100L;
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, net));
+    }
+
+    public static int blackHoleGenerationPerTick(BeyondOrbitSavedData data) {
+        long generated = data.activeBlackHolePowerSatellites().stream()
+                .mapToLong(OrbitalReceiverBlockEntity::blackHoleOutputPerActiveSatellite)
+                .sum();
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, generated));
+    }
+
+    public static int orbitalGenerationPerTick(BeyondOrbitSavedData data) {
+        long generated = (long) solarGenerationPerTick(data) + blackHoleGenerationPerTick(data);
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, generated));
+    }
+
     public static int solarTransmissionLossPercent(BeyondOrbitSavedData data) {
         int gross = solarGrossGenerationPerTick(data);
         int net = solarGenerationPerTick(data);
@@ -345,7 +371,7 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
         int remainingBudget = Config.orbitalReceiverMaxItemsPerTick;
         boolean changed = false;
         for (SatelliteMiningMissionState satellite : data.satellites()) {
-            if (satellite.isLowOrbitSolar() || satellite.isEnergyStorage()) {
+            if (satellite.isLowOrbitSolar() || satellite.isEnergyStorage() || satellite.isBlackHolePower()) {
                 continue;
             }
             if (satellite.satelliteId().getPath().startsWith("uplink_")) {

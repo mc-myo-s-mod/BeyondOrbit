@@ -47,7 +47,8 @@ public final class SatelliteMiningMissionState {
     public enum SatelliteKind {
         MINING("mining"),
         LOW_ORBIT_SOLAR("low_orbit_solar"),
-        ENERGY_STORAGE("energy_storage");
+        ENERGY_STORAGE("energy_storage"),
+        BLACK_HOLE_POWER("black_hole_power");
 
         private final String serializedName;
 
@@ -156,7 +157,7 @@ public final class SatelliteMiningMissionState {
         } else if (state.isLowOrbitSolar()) {
             state.orbitDistanceKm = Math.max(0, Config.lowOrbitSolarDistanceKm);
         }
-        state.active = state.missionPhase == MissionPhase.ACTIVE && (state.active || state.isLowOrbitSolar() || state.isEnergyStorage());
+        state.active = state.missionPhase == MissionPhase.ACTIVE && (state.active || state.isLowOrbitSolar() || state.isEnergyStorage() || state.isBlackHolePower());
         state.storedEnergy = Math.max(0, tag.getInt(STORED_ENERGY_TAG));
         state.energyCapacity = Math.max(0, tag.getInt(ENERGY_CAPACITY_TAG));
         if (state.isEnergyStorage() && state.energyCapacity <= 0) {
@@ -343,6 +344,35 @@ public final class SatelliteMiningMissionState {
         return extracted;
     }
 
+    public void startBlackHolePower(ResourceLocation targetBody, int launchTicks, int transitTicks, int stabilizationTicks, int transmissionDistanceKm) {
+        this.kind = SatelliteKind.BLACK_HOLE_POWER;
+        this.targetBody = targetBody;
+        this.solarPanelTier = SolarPanelTier.BASIC;
+        this.orbitDistanceKm = Math.max(0, transmissionDistanceKm);
+        this.ticksUntilNextExtraction = 0;
+        this.ticksPerExtraction = 1;
+        this.rollsPerExtraction = 1;
+        int safeLaunchTicks = Math.max(0, launchTicks);
+        int safeTransitTicks = Math.max(0, transitTicks);
+        int safeStabilizationTicks = Math.max(0, stabilizationTicks);
+        if (safeLaunchTicks > 0) {
+            this.phaseTicksRemaining = safeLaunchTicks;
+            this.transitTicks = safeTransitTicks + safeStabilizationTicks;
+            this.missionPhase = MissionPhase.LAUNCHING;
+            this.active = false;
+        } else if (safeTransitTicks + safeStabilizationTicks > 0) {
+            this.phaseTicksRemaining = safeTransitTicks + safeStabilizationTicks;
+            this.transitTicks = 0;
+            this.missionPhase = MissionPhase.IN_TRANSIT;
+            this.active = false;
+        } else {
+            this.phaseTicksRemaining = 0;
+            this.transitTicks = 0;
+            this.missionPhase = MissionPhase.ACTIVE;
+            this.active = true;
+        }
+    }
+
     public boolean advanceMissionPhase() {
         if (missionPhase == MissionPhase.ACTIVE || missionPhase == MissionPhase.IDLE) {
             return false;
@@ -371,6 +401,10 @@ public final class SatelliteMiningMissionState {
 
     public boolean isEnergyStorage() {
         return kind == SatelliteKind.ENERGY_STORAGE;
+    }
+
+    public boolean isBlackHolePower() {
+        return kind == SatelliteKind.BLACK_HOLE_POWER;
     }
 
     public SatelliteKind kind() {

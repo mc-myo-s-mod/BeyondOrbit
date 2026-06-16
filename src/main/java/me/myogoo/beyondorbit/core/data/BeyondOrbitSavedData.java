@@ -191,6 +191,19 @@ public final class BeyondOrbitSavedData extends SavedData {
                 .toList();
     }
 
+    public Collection<SatelliteMiningMissionState> blackHolePowerSatellites() {
+        return satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isBlackHolePower)
+                .toList();
+    }
+
+    public Collection<SatelliteMiningMissionState> activeBlackHolePowerSatellites() {
+        return satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isBlackHolePower)
+                .filter(satellite -> satellite.missionPhase() == SatelliteMiningMissionState.MissionPhase.ACTIVE)
+                .toList();
+    }
+
     public int energyStorageSatelliteCount() {
         return energyStorageSatellites().size();
     }
@@ -199,16 +212,24 @@ public final class BeyondOrbitSavedData extends SavedData {
         return activeEnergyStorageSatellites().size();
     }
 
+    public int blackHolePowerSatelliteCount() {
+        return blackHolePowerSatellites().size();
+    }
+
+    public int activeBlackHolePowerSatelliteCount() {
+        return activeBlackHolePowerSatellites().size();
+    }
+
     public int tickSatellites(RandomSource random) {
         int activeExtractions = 0;
         if (activeEnergyStorageSatelliteCount() > 0) {
-            OrbitalReceiverBlockEntity.storeOrbitalEnergy(this, OrbitalReceiverBlockEntity.solarGenerationPerTick(this));
+            OrbitalReceiverBlockEntity.storeOrbitalEnergy(this, OrbitalReceiverBlockEntity.orbitalGenerationPerTick(this));
         }
         for (SatelliteMiningMissionState satellite : satellites.values()) {
             if (satellite.advanceMissionPhase()) {
                 setDirty();
             }
-            if (satellite.isLowOrbitSolar() || satellite.isEnergyStorage()) {
+            if (satellite.isLowOrbitSolar() || satellite.isEnergyStorage() || satellite.isBlackHolePower()) {
                 continue;
             }
             if (!satellite.active() || satellite.targetBody() == null) {
