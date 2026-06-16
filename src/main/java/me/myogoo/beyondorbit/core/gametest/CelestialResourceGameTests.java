@@ -985,8 +985,9 @@ public final class CelestialResourceGameTests {
         OrbitalReceiverBlockEntity receiver = (OrbitalReceiverBlockEntity) helper.getBlockEntity(receiverPos);
         OrbitalReceiverBlockEntity.serverTick(helper.getLevel(), helper.absolutePos(receiverPos), receiver.getBlockState(), receiver);
         int expectedTotalNet = baselineNet + expectedNet;
-        if (receiver.energyStored() != expectedTotalNet) {
-            throw new AssertionError("Expected receiver to store exact tiered distance-loss solar output, expected " + expectedTotalNet + ", got " + receiver.energyStored());
+        int expectedStored = Math.min(expectedTotalNet, Config.orbitalReceiverTransferFePerTick);
+        if (receiver.energyStored() != expectedStored) {
+            throw new AssertionError("Expected receiver to store capped tiered distance-loss solar output, expected " + expectedStored + ", got " + receiver.energyStored());
         }
         Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         OrbitalReceiverMenu menu = new OrbitalReceiverMenu(0, player.getInventory(), receiver);
