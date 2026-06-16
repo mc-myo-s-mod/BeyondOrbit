@@ -149,5 +149,11 @@
   "tooltip.beyondorbit.tierable.transmitter.loss": "Transmission loss: %s%% / 1000 km",
   "tooltip.beyondorbit.tierable.telescope.max_tier": "Max observable body tier: %s",
   "tooltip.beyondorbit.tierable.telescope.observation_ticks": "Observation time: %s ticks",
-  "tooltip.beyondorbit.tierable.telescope.discoveries": "Discoveries per use: %s"
+  "tooltip.beyondorbit.tierable.telescope.discoveries": "Discoveries per use: %s",
+  "item.beyondorbit.black_hole_power_satellite": "Black Hole Power Satellite",
+  "message.beyondorbit.launch_pad.missing_singularity_matrix": "Launch Pad requires one Singularity Matrix in your inventory to launch a Black Hole Power Satellite.",
+  "message.beyondorbit.launch_pad.black_hole_target_undiscovered": "Black Hole Power Satellite requires discovered target %s. Use a Telescope until Void Maw is known.",
+  "message.beyondorbit.launch_pad.black_hole_target_missing": "Black Hole Power Satellite target %s is not loaded.",
+  "message.beyondorbit.launch_pad.black_hole_launched": "Launch Pad fired Black Hole Power Satellite %s toward %s. It will provide %s FE/t once active.",
+  "message.beyondorbit.launch_pad.black_hole_already_deployed": "This Launch Pad already has Black Hole Power Satellite %s. Deployed black-hole satellites: %s, %s FE/t each once active."
 }

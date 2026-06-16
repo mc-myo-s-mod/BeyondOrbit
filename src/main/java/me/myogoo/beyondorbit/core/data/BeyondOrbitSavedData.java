@@ -177,13 +177,34 @@ public final class BeyondOrbitSavedData extends SavedData {
         return activeLowOrbitSolarSatellites().size();
     }
 
+    public Collection<SatelliteMiningMissionState> blackHolePowerSatellites() {
+        return satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isBlackHolePower)
+                .toList();
+    }
+
+    public Collection<SatelliteMiningMissionState> activeBlackHolePowerSatellites() {
+        return satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isBlackHolePower)
+                .filter(satellite -> satellite.missionPhase() == SatelliteMiningMissionState.MissionPhase.ACTIVE)
+                .toList();
+    }
+
+    public int blackHolePowerSatelliteCount() {
+        return blackHolePowerSatellites().size();
+    }
+
+    public int activeBlackHolePowerSatelliteCount() {
+        return activeBlackHolePowerSatellites().size();
+    }
+
     public int tickSatellites(RandomSource random) {
         int activeExtractions = 0;
         for (SatelliteMiningMissionState satellite : satellites.values()) {
             if (satellite.advanceMissionPhase()) {
                 setDirty();
             }
-            if (satellite.isLowOrbitSolar()) {
+            if (satellite.isLowOrbitSolar() || satellite.isBlackHolePower()) {
                 continue;
             }
             if (!satellite.active() || satellite.targetBody() == null) {

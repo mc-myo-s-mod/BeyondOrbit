@@ -149,5 +149,11 @@
   "tooltip.beyondorbit.tierable.transmitter.loss": "송전 손실: 1000 km당 %s%%",
   "tooltip.beyondorbit.tierable.telescope.max_tier": "관측 가능 천체 티어: %s",
   "tooltip.beyondorbit.tierable.telescope.observation_ticks": "관측 시간: %s틱",
-  "tooltip.beyondorbit.tierable.telescope.discoveries": "사용당 발견 수: %s"
+  "tooltip.beyondorbit.tierable.telescope.discoveries": "사용당 발견 수: %s",
+  "item.beyondorbit.black_hole_power_satellite": "블랙홀 발전 위성",
+  "message.beyondorbit.launch_pad.missing_singularity_matrix": "블랙홀 발전 위성을 발사하려면 발사대에 인벤토리의 특이점 매트릭스 1개가 필요합니다.",
+  "message.beyondorbit.launch_pad.black_hole_target_undiscovered": "블랙홀 발전 위성에는 발견된 목표 %s이(가) 필요합니다. Void Maw가 발견될 때까지 망원경을 사용하세요.",
+  "message.beyondorbit.launch_pad.black_hole_target_missing": "블랙홀 발전 위성 목표 %s이(가) 로드되지 않았습니다.",
+  "message.beyondorbit.launch_pad.black_hole_launched": "발사대가 블랙홀 발전 위성 %s을(를) %s 방향으로 발사했습니다. 활성화 후 %s FE/t를 공급합니다.",
+  "message.beyondorbit.launch_pad.black_hole_already_deployed": "이 발사대에는 이미 블랙홀 발전 위성 %s이(가) 배치되어 있습니다. 배치된 블랙홀 위성: %s기, 활성화 후 기당 %s FE/t."
 }

@@ -1080,6 +1080,74 @@ public final class CelestialResourceGameTests {
     }
 
 
+    @GameTest(template = "empty", timeoutTicks = 160)
+    public static void blackHolePowerSatelliteLaunchesAndPowersReceiver(GameTestHelper helper) {
+        BlockPos padPos = new BlockPos(1, 2, 1);
+        BlockPos receiverPos = new BlockPos(3, 2, 1);
+        ResourceLocation voidMawId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "void_maw");
+        CelestialBodyDefinition voidMaw = CelestialBodyRegistry.get(voidMawId)
+                .orElseThrow(() -> new AssertionError("Expected Void Maw celestial body to be loaded"));
+        BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
+        savedData.discoverCelestialBody(voidMawId);
+        int baselineGeneration = OrbitalReceiverBlockEntity.orbitalGenerationPerTick(savedData);
+
+        helper.setBlock(padPos, BeyondOrbitContent.LAUNCH_PAD.get());
+        Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getAbilities().instabuild = false;
+        ItemStack satelliteStack = new ItemStack(BeyondOrbitContent.BLACK_HOLE_POWER_SATELLITE.get());
+        player.setItemInHand(InteractionHand.MAIN_HAND, satelliteStack);
+        player.getInventory().add(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()));
+        player.getInventory().add(new ItemStack(BeyondOrbitContent.SINGULARITY_MATRIX.get()));
+
+        helper.useBlock(padPos, player);
+        if (!satelliteStack.isEmpty()) {
+            throw new AssertionError("Expected Launch Pad to consume one Black Hole Power Satellite");
+        }
+        if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()))) {
+            throw new AssertionError("Expected Launch Pad to consume one Rocket Frame for black-hole launch");
+        }
+        if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.SINGULARITY_MATRIX.get()))) {
+            throw new AssertionError("Expected Launch Pad to consume one Singularity Matrix for black-hole launch");
+        }
+
+        ResourceLocation satelliteId = SatelliteUplinkService.blackHolePowerSatelliteIdFor(helper.getLevel(), helper.absolutePos(padPos));
+        SatelliteMiningMissionState satellite = savedData.getSatellite(satelliteId)
+                .orElseThrow(() -> new AssertionError("Expected launch pad to create black-hole power satellite " + satelliteId));
+        if (!satellite.isBlackHolePower()) {
+            throw new AssertionError("Expected satellite to be marked as black-hole power");
+        }
+        if (!voidMaw.id().equals(satellite.targetBody())) {
+            throw new AssertionError("Expected black-hole power satellite to target Void Maw");
+        }
+        if (satellite.orbitDistanceKm() != Math.min(Config.blackHolePowerDistanceKm, 9000)) {
+            throw new AssertionError("Expected black-hole satellite to store capped configured transmission distance");
+        }
+        if (satellite.active() || satellite.missionPhase() == SatelliteMiningMissionState.MissionPhase.ACTIVE) {
+            throw new AssertionError("Expected black-hole power satellite to wait through launch/transit before activation");
+        }
+
+        int safety = 0;
+        while (!satellite.active() && safety++ < 1000) {
+            savedData.tickSatellites(RandomSource.create(12000L + safety));
+        }
+        if (!satellite.active() || satellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.ACTIVE) {
+            throw new AssertionError("Expected black-hole power satellite to become active after launch/transit");
+        }
+
+        int blackHoleOutput = OrbitalReceiverBlockEntity.blackHoleOutputPerActiveSatellite(satellite);
+        if (blackHoleOutput <= 0) {
+            throw new AssertionError("Expected active black-hole satellite to produce positive FE/t");
+        }
+        helper.setBlock(receiverPos, BeyondOrbitContent.ORBITAL_RECEIVER.get());
+        OrbitalReceiverBlockEntity receiver = (OrbitalReceiverBlockEntity) helper.getBlockEntity(receiverPos);
+        OrbitalReceiverBlockEntity.serverTick(helper.getLevel(), helper.absolutePos(receiverPos), receiver.getBlockState(), receiver);
+        int expectedStored = Math.min(baselineGeneration + blackHoleOutput, Config.orbitalReceiverTransferFePerTick);
+        if (receiver.energyStored() != expectedStored) {
+            throw new AssertionError("Expected Orbital Receiver to store black-hole orbital FE, expected " + expectedStored + ", got " + receiver.energyStored());
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 20)
     public static void tierableComponentItemsExposeNumericStats(GameTestHelper helper) {
         assertTierableComponent(BeyondOrbitContent.BASIC_SATELLITE_BODY.get(), TierableItemType.BODY, TierableItemTier.BASIC, 10_000, 100, 1);
@@ -1115,5 +1183,4 @@ public final class CelestialResourceGameTests {
             throw new AssertionError("Unexpected stats for " + type + "/" + tier + ": " + stats);
         }
     }
-
 }

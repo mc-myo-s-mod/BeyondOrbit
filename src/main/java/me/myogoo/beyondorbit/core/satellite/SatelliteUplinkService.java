@@ -57,6 +57,14 @@ public final class SatelliteUplinkService {
         );
     }
 
+    public static ResourceLocation blackHolePowerSatelliteIdFor(Level level, BlockPos pos) {
+        String dimension = sanitizePath(level.dimension().location().toString());
+        return ResourceLocation.fromNamespaceAndPath(
+                BeyondOrbitCore.MODID,
+                "black_hole_power_" + dimension + "_" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ()
+        );
+    }
+
     public static boolean deploySatellite(Level level, BlockPos pos, Player player, ItemStack satelliteStack) {
         if (!(level instanceof ServerLevel serverLevel)) {
             return true;
@@ -158,6 +166,69 @@ public final class SatelliteUplinkService {
                 definition.id().toString(),
                 rolls,
                 intervalTicks
+        ));
+        return true;
+    }
+
+    public static boolean launchBlackHolePowerSatelliteFromPad(Level level, BlockPos pos, Player player, ItemStack satelliteStack) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return true;
+        }
+
+        ResourceLocation voidMawId = ResourceLocation.fromNamespaceAndPath(BeyondOrbitCore.MODID, "void_maw");
+        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
+        if (!data.isCelestialBodyDiscovered(voidMawId)) {
+            player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.black_hole_target_undiscovered", voidMawId.toString()));
+            return false;
+        }
+        Optional<CelestialBodyDefinition> target = CelestialBodyRegistry.get(voidMawId);
+        if (target.isEmpty()) {
+            player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.black_hole_target_missing", voidMawId.toString()));
+            return false;
+        }
+
+        ResourceLocation satelliteId = blackHolePowerSatelliteIdFor(level, pos);
+        SatelliteMiningMissionState existingSatellite = data.getSatellite(satelliteId).orElse(null);
+        if (existingSatellite != null && existingSatellite.isBlackHolePower()) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.beyondorbit.launch_pad.black_hole_already_deployed",
+                    satelliteId.toString(),
+                    data.blackHolePowerSatelliteCount(),
+                    OrbitalReceiverBlockEntity.blackHoleOutputPerActiveSatellite(existingSatellite)
+            ));
+            return false;
+        }
+
+        if (!player.getAbilities().instabuild) {
+            if (!hasOne(player, BeyondOrbitContent.ROCKET_FRAME.get())) {
+                player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.missing_rocket_frame"));
+                return false;
+            }
+            if (!hasOne(player, BeyondOrbitContent.SINGULARITY_MATRIX.get())) {
+                player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.missing_singularity_matrix"));
+                return false;
+            }
+            consumeOne(player, BeyondOrbitContent.ROCKET_FRAME.get());
+            consumeOne(player, BeyondOrbitContent.SINGULARITY_MATRIX.get());
+            satelliteStack.shrink(1);
+        }
+
+        CelestialBodyDefinition definition = target.get();
+        SatelliteMiningMissionState satellite = data.getOrCreateSatellite(satelliteId);
+        satellite.startBlackHolePower(
+                definition.id(),
+                launchPadLaunchTicks(OrbitalModuleTier.ELITE),
+                launchPadTransitTicks(definition, OrbitalModuleTier.ELITE),
+                Config.blackHolePowerDeploymentTicks,
+                Math.min(Config.blackHolePowerDistanceKm, 9000)
+        );
+        data.setDirty();
+
+        player.sendSystemMessage(Component.translatable(
+                "message.beyondorbit.launch_pad.black_hole_launched",
+                satelliteId.toString(),
+                definition.id().toString(),
+                OrbitalReceiverBlockEntity.blackHoleOutputPerActiveSatellite(satellite)
         ));
         return true;
     }

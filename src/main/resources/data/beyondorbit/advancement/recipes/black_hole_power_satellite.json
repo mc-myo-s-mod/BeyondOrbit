@@ -1,0 +1,43 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_singularity_matrix": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:singularity_matrix"
+          }
+        ]
+      }
+    },
+    "has_low_orbit_solar_satellite": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:low_orbit_solar_satellite"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "beyondorbit:black_hole_power_satellite"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_singularity_matrix",
+      "has_low_orbit_solar_satellite",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "beyondorbit:black_hole_power_satellite"
+    ]
+  }
+}
