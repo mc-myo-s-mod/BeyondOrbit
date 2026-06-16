@@ -46,7 +46,8 @@ public enum SolarPanelTier {
     }
 
     public int generationFePerTick() {
-        return Math.max(0, Config.orbitalReceiverSolarFePerTick * outputPercent() / 100);
+        long generated = (long) Config.orbitalReceiverSolarFePerTick * outputPercent() / 100L;
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, generated));
     }
 
     public int transmissionDistanceKm() {
