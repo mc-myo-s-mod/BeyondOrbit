@@ -6,6 +6,7 @@ import me.myogoo.beyondorbit.core.celestial.CelestialBodyDefinition;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyRegistry;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyState;
 import me.myogoo.beyondorbit.core.celestial.ResourceExtractionResult;
+import me.myogoo.beyondorbit.core.blockentity.OrbitalReceiverBlockEntity;
 import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -177,6 +178,19 @@ public final class BeyondOrbitSavedData extends SavedData {
         return activeLowOrbitSolarSatellites().size();
     }
 
+    public Collection<SatelliteMiningMissionState> energyStorageSatellites() {
+        return satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isEnergyStorage)
+                .toList();
+    }
+
+    public Collection<SatelliteMiningMissionState> activeEnergyStorageSatellites() {
+        return satellites.values().stream()
+                .filter(SatelliteMiningMissionState::isEnergyStorage)
+                .filter(satellite -> satellite.missionPhase() == SatelliteMiningMissionState.MissionPhase.ACTIVE)
+                .toList();
+    }
+
     public Collection<SatelliteMiningMissionState> blackHolePowerSatellites() {
         return satellites.values().stream()
                 .filter(SatelliteMiningMissionState::isBlackHolePower)
@@ -190,6 +204,14 @@ public final class BeyondOrbitSavedData extends SavedData {
                 .toList();
     }
 
+    public int energyStorageSatelliteCount() {
+        return energyStorageSatellites().size();
+    }
+
+    public int activeEnergyStorageSatelliteCount() {
+        return activeEnergyStorageSatellites().size();
+    }
+
     public int blackHolePowerSatelliteCount() {
         return blackHolePowerSatellites().size();
     }
@@ -200,11 +222,14 @@ public final class BeyondOrbitSavedData extends SavedData {
 
     public int tickSatellites(RandomSource random) {
         int activeExtractions = 0;
+        if (activeEnergyStorageSatelliteCount() > 0) {
+            OrbitalReceiverBlockEntity.storeOrbitalEnergy(this, OrbitalReceiverBlockEntity.orbitalGenerationPerTick(this));
+        }
         for (SatelliteMiningMissionState satellite : satellites.values()) {
             if (satellite.advanceMissionPhase()) {
                 setDirty();
             }
-            if (satellite.isLowOrbitSolar() || satellite.isBlackHolePower()) {
+            if (satellite.isLowOrbitSolar() || satellite.isEnergyStorage() || satellite.isBlackHolePower()) {
                 continue;
             }
             if (!satellite.active() || satellite.targetBody() == null) {

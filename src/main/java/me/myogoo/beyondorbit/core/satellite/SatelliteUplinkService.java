@@ -57,6 +57,14 @@ public final class SatelliteUplinkService {
         );
     }
 
+    public static ResourceLocation energyStorageSatelliteIdFor(Level level, BlockPos pos) {
+        String dimension = sanitizePath(level.dimension().location().toString());
+        return ResourceLocation.fromNamespaceAndPath(
+                BeyondOrbitCore.MODID,
+                "energy_storage_" + dimension + "_" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ()
+        );
+    }
+
     public static ResourceLocation blackHolePowerSatelliteIdFor(Level level, BlockPos pos) {
         String dimension = sanitizePath(level.dimension().location().toString());
         return ResourceLocation.fromNamespaceAndPath(
@@ -276,6 +284,52 @@ public final class SatelliteUplinkService {
                 satelliteId.toString(),
                 data.lowOrbitSolarSatelliteCount(),
                 OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite(satellite)
+        ));
+        return true;
+    }
+
+    public static boolean launchEnergyStorageSatelliteFromPad(Level level, BlockPos pos, Player player, ItemStack satelliteStack) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return true;
+        }
+
+        ResourceLocation satelliteId = energyStorageSatelliteIdFor(level, pos);
+        BeyondOrbitSavedData data = BeyondOrbitSavedData.get(serverLevel.getServer());
+        SatelliteMiningMissionState existingSatellite = data.getSatellite(satelliteId).orElse(null);
+        if (existingSatellite != null && existingSatellite.isEnergyStorage()) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.beyondorbit.launch_pad.energy_storage_already_deployed",
+                    satelliteId.toString(),
+                    data.energyStorageSatelliteCount(),
+                    existingSatellite.storedEnergy(),
+                    existingSatellite.energyCapacity()
+            ));
+            return false;
+        }
+
+        if (!player.getAbilities().instabuild) {
+            if (!hasOne(player, BeyondOrbitContent.ROCKET_FRAME.get())) {
+                player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.missing_rocket_frame"));
+                return false;
+            }
+            if (!hasOne(player, BeyondOrbitContent.ORBITAL_DATA_CORE.get())) {
+                player.sendSystemMessage(Component.translatable("message.beyondorbit.launch_pad.missing_orbital_data_core"));
+                return false;
+            }
+            consumeOne(player, BeyondOrbitContent.ROCKET_FRAME.get());
+            consumeOne(player, BeyondOrbitContent.ORBITAL_DATA_CORE.get());
+            satelliteStack.shrink(1);
+        }
+
+        SatelliteMiningMissionState satellite = data.getOrCreateSatellite(satelliteId);
+        satellite.markEnergyStorage(Config.orbitalEnergyStorageDeploymentTicks, Config.orbitalEnergyStorageCapacity);
+        data.setDirty();
+
+        player.sendSystemMessage(Component.translatable(
+                "message.beyondorbit.launch_pad.energy_storage_launched",
+                satelliteId.toString(),
+                data.energyStorageSatelliteCount(),
+                satellite.energyCapacity()
         ));
         return true;
     }

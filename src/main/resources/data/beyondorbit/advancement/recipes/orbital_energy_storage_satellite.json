@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_orbital_data_core": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "beyondorbit:orbital_data_core"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "beyondorbit:orbital_energy_storage_satellite"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_orbital_data_core",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "beyondorbit:orbital_energy_storage_satellite"
+    ]
+  }
+}

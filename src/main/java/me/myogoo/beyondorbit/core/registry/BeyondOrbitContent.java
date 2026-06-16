@@ -163,6 +163,12 @@ public final class BeyondOrbitContent {
             new Item.Properties().stacksTo(16)
     );
 
+    public static final DeferredItem<Item> ORBITAL_ENERGY_STORAGE_SATELLITE = ITEMS.registerItem(
+            "orbital_energy_storage_satellite",
+            Item::new,
+            new Item.Properties().stacksTo(16)
+    );
+
     public static final DeferredItem<Item> BLACK_HOLE_POWER_SATELLITE = ITEMS.registerItem(
             "black_hole_power_satellite",
             Item::new,
@@ -339,6 +345,7 @@ public final class BeyondOrbitContent {
                     .displayItems((parameters, output) -> {
                         output.accept(BASIC_SATELLITE.get());
                         output.accept(LOW_ORBIT_SOLAR_SATELLITE.get());
+                        output.accept(ORBITAL_ENERGY_STORAGE_SATELLITE.get());
                         output.accept(BLACK_HOLE_POWER_SATELLITE.get());
                         output.accept(SOLAR_PANEL.get());
                         output.accept(ADVANCED_SOLAR_PANEL.get());
