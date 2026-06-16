@@ -8,6 +8,7 @@
   "block.beyondorbit.module_assembler": "모듈 조립기",
   "item.beyondorbit.basic_satellite": "기본 위성",
   "item.beyondorbit.low_orbit_solar_satellite": "저궤도 태양광 위성",
+  "item.beyondorbit.black_hole_power_satellite": "블랙홀 발전 위성",
   "item.beyondorbit.solar_panel": "태양광 패널",
   "item.beyondorbit.orbital_data_core": "궤도 데이터 코어",
   "item.beyondorbit.rocket_frame": "로켓 프레임",
@@ -112,5 +113,10 @@
   "tooltip.beyondorbit.solar_panel.output": "궤도 태양광 출력 %s%%",
   "screen.beyondorbit.receiver.solar_stats": "태양광 링크: %s/%s 활성 | 총 %s FE/t | 손실 %s%%",
   "message.beyondorbit.uplink.no_discovered_bodies": "아직 발견된 천체가 없습니다. 채굴 위성을 발사하기 전에 망원경을 사용하세요.",
-  "message.beyondorbit.launch_pad.no_discovered_bodies": "발사대에 사용할 발견된 채굴 대상이 없습니다. 채굴 위성을 발사하기 전에 망원경을 사용하세요."
+  "message.beyondorbit.launch_pad.no_discovered_bodies": "발사대에 사용할 발견된 채굴 대상이 없습니다. 채굴 위성을 발사하기 전에 망원경을 사용하세요.",
+  "message.beyondorbit.launch_pad.missing_singularity_matrix": "블랙홀 발전 위성을 발사하려면 발사대에 인벤토리의 특이점 매트릭스 1개가 필요합니다.",
+  "message.beyondorbit.launch_pad.black_hole_target_undiscovered": "블랙홀 발전 위성에는 발견된 목표 %s이(가) 필요합니다. Void Maw가 발견될 때까지 망원경을 사용하세요.",
+  "message.beyondorbit.launch_pad.black_hole_target_missing": "블랙홀 발전 위성 목표 %s이(가) 로드되지 않았습니다.",
+  "message.beyondorbit.launch_pad.black_hole_launched": "발사대가 블랙홀 발전 위성 %s을(를) %s 방향으로 발사했습니다. 활성화 후 %s FE/t를 공급합니다.",
+  "message.beyondorbit.launch_pad.black_hole_already_deployed": "이 발사대에는 이미 블랙홀 발전 위성 %s이(가) 배치되어 있습니다. 배치된 블랙홀 위성: %s기, 활성화 후 기당 %s FE/t."
 }

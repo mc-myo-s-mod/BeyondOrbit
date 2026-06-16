@@ -8,6 +8,7 @@
   "block.beyondorbit.module_assembler": "Module Assembler",
   "item.beyondorbit.basic_satellite": "Basic Satellite",
   "item.beyondorbit.low_orbit_solar_satellite": "Low Orbit Solar Satellite",
+  "item.beyondorbit.black_hole_power_satellite": "Black Hole Power Satellite",
   "item.beyondorbit.solar_panel": "Solar Panel",
   "item.beyondorbit.orbital_data_core": "Orbital Data Core",
   "item.beyondorbit.rocket_frame": "Rocket Frame",
@@ -112,5 +113,10 @@
   "tooltip.beyondorbit.solar_panel.output": "%s%% orbital solar output",
   "screen.beyondorbit.receiver.solar_stats": "Solar links: %s/%s active | gross %s FE/t | loss %s%%",
   "message.beyondorbit.uplink.no_discovered_bodies": "No celestial bodies have been discovered yet. Use a Telescope before launching a mining satellite.",
-  "message.beyondorbit.launch_pad.no_discovered_bodies": "Launch Pad has no discovered mining targets. Use a Telescope before launching a mining satellite."
+  "message.beyondorbit.launch_pad.no_discovered_bodies": "Launch Pad has no discovered mining targets. Use a Telescope before launching a mining satellite.",
+  "message.beyondorbit.launch_pad.missing_singularity_matrix": "Launch Pad requires one Singularity Matrix in your inventory to launch a Black Hole Power Satellite.",
+  "message.beyondorbit.launch_pad.black_hole_target_undiscovered": "Black Hole Power Satellite requires discovered target %s. Use a Telescope until Void Maw is known.",
+  "message.beyondorbit.launch_pad.black_hole_target_missing": "Black Hole Power Satellite target %s is not loaded.",
+  "message.beyondorbit.launch_pad.black_hole_launched": "Launch Pad fired Black Hole Power Satellite %s toward %s. It will provide %s FE/t once active.",
+  "message.beyondorbit.launch_pad.black_hole_already_deployed": "This Launch Pad already has Black Hole Power Satellite %s. Deployed black-hole satellites: %s, %s FE/t each once active."
 }
