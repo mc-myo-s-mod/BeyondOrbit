@@ -29,6 +29,9 @@ public class Config {
     private static final ModConfigSpec.IntValue LAUNCH_PAD_TRANSIT_SPEED_REDUCTION_PERCENT_PER_LEVEL;
     private static final ModConfigSpec.IntValue LOW_ORBIT_SOLAR_DEPLOYMENT_TICKS;
     private static final ModConfigSpec.IntValue LOW_ORBIT_SOLAR_DISTANCE_KM;
+    private static final ModConfigSpec.IntValue ORBITAL_ENERGY_STORAGE_DEPLOYMENT_TICKS;
+    private static final ModConfigSpec.IntValue ORBITAL_ENERGY_STORAGE_CAPACITY;
+    private static final ModConfigSpec.IntValue ORBITAL_ENERGY_STORAGE_TRANSFER_FE_PER_TICK;
     private static final ModConfigSpec.IntValue ORBITAL_RECEIVER_ENERGY_CAPACITY;
     private static final ModConfigSpec.IntValue ORBITAL_RECEIVER_SOLAR_FE_PER_TICK;
     private static final ModConfigSpec.IntValue ORBITAL_RECEIVER_TRANSMISSION_LOSS_PERCENT_PER_1000_KM;
@@ -125,6 +128,18 @@ public class Config {
                 .comment("Nominal low-orbit solar transmission distance in kilometers. Used to calculate receiver transmission loss.")
                 .defineInRange("lowOrbitSolarDistanceKm", 2000, 0, 1_000_000);
 
+        ORBITAL_ENERGY_STORAGE_DEPLOYMENT_TICKS = BUILDER
+                .comment("Server ticks an Orbital Energy Storage Satellite spends deploying before it can buffer orbital FE.")
+                .defineInRange("orbitalEnergyStorageDeploymentTicks", 60, 0, 72000);
+
+        ORBITAL_ENERGY_STORAGE_CAPACITY = BUILDER
+                .comment("FE capacity for one active Orbital Energy Storage Satellite.")
+                .defineInRange("orbitalEnergyStorageCapacity", 1_000_000, 0, 1_000_000_000);
+
+        ORBITAL_ENERGY_STORAGE_TRANSFER_FE_PER_TICK = BUILDER
+                .comment("Maximum FE per tick each Orbital Energy Storage Satellite can accept from generators or provide to receivers.")
+                .defineInRange("orbitalEnergyStorageTransferFePerTick", 4096, 0, 1_000_000_000);
+
         ORBITAL_RECEIVER_ENERGY_CAPACITY = BUILDER
                 .comment("Internal FE buffer capacity for each Orbital Receiver.")
                 .defineInRange("orbitalReceiverEnergyCapacity", 100000, 0, 1_000_000_000);
@@ -182,6 +197,9 @@ public class Config {
     public static int launchPadTransitSpeedReductionPercentPerLevel;
     public static int lowOrbitSolarDeploymentTicks;
     public static int lowOrbitSolarDistanceKm;
+    public static int orbitalEnergyStorageDeploymentTicks;
+    public static int orbitalEnergyStorageCapacity;
+    public static int orbitalEnergyStorageTransferFePerTick;
     public static int orbitalReceiverEnergyCapacity;
     public static int orbitalReceiverSolarFePerTick;
     public static int orbitalReceiverTransmissionLossPercentPer1000Km;
@@ -213,6 +231,9 @@ public class Config {
         launchPadTransitSpeedReductionPercentPerLevel = LAUNCH_PAD_TRANSIT_SPEED_REDUCTION_PERCENT_PER_LEVEL.get();
         lowOrbitSolarDeploymentTicks = LOW_ORBIT_SOLAR_DEPLOYMENT_TICKS.get();
         lowOrbitSolarDistanceKm = LOW_ORBIT_SOLAR_DISTANCE_KM.get();
+        orbitalEnergyStorageDeploymentTicks = ORBITAL_ENERGY_STORAGE_DEPLOYMENT_TICKS.get();
+        orbitalEnergyStorageCapacity = ORBITAL_ENERGY_STORAGE_CAPACITY.get();
+        orbitalEnergyStorageTransferFePerTick = ORBITAL_ENERGY_STORAGE_TRANSFER_FE_PER_TICK.get();
         orbitalReceiverEnergyCapacity = ORBITAL_RECEIVER_ENERGY_CAPACITY.get();
         orbitalReceiverSolarFePerTick = ORBITAL_RECEIVER_SOLAR_FE_PER_TICK.get();
         orbitalReceiverTransmissionLossPercentPer1000Km = ORBITAL_RECEIVER_TRANSMISSION_LOSS_PERCENT_PER_1000_KM.get();

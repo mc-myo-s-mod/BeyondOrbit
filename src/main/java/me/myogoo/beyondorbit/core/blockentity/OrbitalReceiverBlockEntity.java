@@ -231,10 +231,59 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
 
     private boolean receiveOrbitalSolarEnergy(BeyondOrbitSavedData data) {
         int generated = solarGenerationPerTick(data);
-        if (generated <= 0) {
+        int stored = storeOrbitalEnergy(data, generated);
+        int direct = Math.max(0, generated - stored);
+        int capacityLeft = Math.max(0, energy.getMaxEnergyStored() - energy.getEnergyStored());
+        int fromStorage = extractStoredOrbitalEnergy(data, Math.max(0, capacityLeft - direct));
+        int received = direct + fromStorage;
+        if (received <= 0) {
             return false;
         }
-        return energy.receiveEnergy(generated, false) > 0;
+        return energy.receiveEnergy(received, false) > 0 || stored > 0 || fromStorage > 0;
+    }
+
+    public static int storeOrbitalEnergy(BeyondOrbitSavedData data, int amount) {
+        if (amount <= 0 || Config.orbitalEnergyStorageTransferFePerTick <= 0) {
+            return 0;
+        }
+        int remaining = amount;
+        int stored = 0;
+        for (SatelliteMiningMissionState satellite : data.activeEnergyStorageSatellites()) {
+            if (remaining <= 0) {
+                break;
+            }
+            int moved = satellite.receiveEnergy(remaining, Config.orbitalEnergyStorageTransferFePerTick);
+            if (moved > 0) {
+                remaining -= moved;
+                stored += moved;
+            }
+        }
+        if (stored > 0) {
+            data.setDirty();
+        }
+        return stored;
+    }
+
+    public static int extractStoredOrbitalEnergy(BeyondOrbitSavedData data, int amount) {
+        if (amount <= 0 || Config.orbitalEnergyStorageTransferFePerTick <= 0) {
+            return 0;
+        }
+        int remaining = amount;
+        int extracted = 0;
+        for (SatelliteMiningMissionState satellite : data.activeEnergyStorageSatellites()) {
+            if (remaining <= 0) {
+                break;
+            }
+            int moved = satellite.extractEnergy(remaining, Config.orbitalEnergyStorageTransferFePerTick);
+            if (moved > 0) {
+                remaining -= moved;
+                extracted += moved;
+            }
+        }
+        if (extracted > 0) {
+            data.setDirty();
+        }
+        return extracted;
     }
 
     public static int transmissionLossPercentForDistance(int distanceKm) {
@@ -292,7 +341,7 @@ public class OrbitalReceiverBlockEntity extends BlockEntity implements MenuProvi
         int remainingBudget = Config.orbitalReceiverMaxItemsPerTick;
         boolean changed = false;
         for (SatelliteMiningMissionState satellite : data.satellites()) {
-            if (satellite.isLowOrbitSolar()) {
+            if (satellite.isLowOrbitSolar() || satellite.isEnergyStorage()) {
                 continue;
             }
             if (satellite.satelliteId().getPath().startsWith("uplink_")) {

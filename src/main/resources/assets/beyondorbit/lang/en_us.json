@@ -112,5 +112,9 @@
   "tooltip.beyondorbit.solar_panel.output": "%s%% orbital solar output",
   "screen.beyondorbit.receiver.solar_stats": "Solar links: %s/%s active | gross %s FE/t | loss %s%%",
   "message.beyondorbit.uplink.no_discovered_bodies": "No celestial bodies have been discovered yet. Use a Telescope before launching a mining satellite.",
-  "message.beyondorbit.launch_pad.no_discovered_bodies": "Launch Pad has no discovered mining targets. Use a Telescope before launching a mining satellite."
+  "message.beyondorbit.launch_pad.no_discovered_bodies": "Launch Pad has no discovered mining targets. Use a Telescope before launching a mining satellite.",
+  "item.beyondorbit.orbital_energy_storage_satellite": "Orbital Energy Storage Satellite",
+  "message.beyondorbit.launch_pad.missing_orbital_data_core": "Launch Pad requires one Orbital Data Core in your inventory to launch an energy storage satellite.",
+  "message.beyondorbit.launch_pad.energy_storage_launched": "Launch Pad deployed Orbital Energy Storage Satellite %s. Deployed storage satellites: %s, capacity %s FE.",
+  "message.beyondorbit.launch_pad.energy_storage_already_deployed": "This Launch Pad already has Orbital Energy Storage Satellite %s. Deployed storage satellites: %s, stored %s/%s FE."
 }

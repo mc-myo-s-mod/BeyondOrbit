@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RCR",
+    "BSB",
+    "RCR"
+  ],
+  "key": {
+    "R": {
+      "item": "minecraft:redstone_block"
+    },
+    "C": {
+      "item": "beyondorbit:orbital_data_core"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    },
+    "S": {
+      "item": "beyondorbit:basic_satellite"
+    }
+  },
+  "result": {
+    "id": "beyondorbit:orbital_energy_storage_satellite",
+    "count": 1
+  }
+}

@@ -1075,4 +1075,75 @@ public final class CelestialResourceGameTests {
         helper.succeed();
     }
 
+
+    @GameTest(template = "empty", timeoutTicks = 120)
+    public static void energyStorageSatelliteLaunchesAndBuffersOrbitalEnergy(GameTestHelper helper) {
+        BlockPos padPos = new BlockPos(1, 2, 1);
+        BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(helper.getLevel().getServer());
+
+        helper.setBlock(padPos, BeyondOrbitContent.LAUNCH_PAD.get());
+        Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack storageStack = new ItemStack(BeyondOrbitContent.ORBITAL_ENERGY_STORAGE_SATELLITE.get());
+        player.setItemInHand(InteractionHand.MAIN_HAND, storageStack);
+        player.getInventory().add(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()));
+        player.getInventory().add(new ItemStack(BeyondOrbitContent.ORBITAL_DATA_CORE.get()));
+
+        helper.useBlock(padPos, player);
+        if (!storageStack.isEmpty()) {
+            throw new AssertionError("Expected Launch Pad to consume one Orbital Energy Storage Satellite");
+        }
+        if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ROCKET_FRAME.get()))) {
+            throw new AssertionError("Expected Launch Pad to consume one Rocket Frame for energy storage launch");
+        }
+        if (player.getInventory().contains(new ItemStack(BeyondOrbitContent.ORBITAL_DATA_CORE.get()))) {
+            throw new AssertionError("Expected Launch Pad to consume one Orbital Data Core for energy storage launch");
+        }
+
+        ResourceLocation satelliteId = SatelliteUplinkService.energyStorageSatelliteIdFor(helper.getLevel(), helper.absolutePos(padPos));
+        SatelliteMiningMissionState storageSatellite = savedData.getSatellite(satelliteId)
+                .orElseThrow(() -> new AssertionError("Expected Launch Pad to create energy storage satellite " + satelliteId));
+        if (!storageSatellite.isEnergyStorage()) {
+            throw new AssertionError("Expected satellite to be marked as energy storage");
+        }
+        if (storageSatellite.energyCapacity() != Config.orbitalEnergyStorageCapacity) {
+            throw new AssertionError("Expected configured orbital storage capacity");
+        }
+        if (storageSatellite.active()) {
+            throw new AssertionError("Expected energy storage satellite to deploy before becoming active");
+        }
+
+        int safety = 0;
+        while (!storageSatellite.active() && safety++ < 1000) {
+            savedData.tickSatellites(RandomSource.create(13000L + safety));
+        }
+        if (!storageSatellite.active() || storageSatellite.missionPhase() != SatelliteMiningMissionState.MissionPhase.ACTIVE) {
+            throw new AssertionError("Expected energy storage satellite to become active after deployment");
+        }
+
+        int stored = OrbitalReceiverBlockEntity.storeOrbitalEnergy(savedData, 512);
+        if (stored != Math.min(512, Config.orbitalEnergyStorageTransferFePerTick)) {
+            throw new AssertionError("Expected active storage satellite to accept orbital FE, got " + stored);
+        }
+        if (storageSatellite.storedEnergy() != stored) {
+            throw new AssertionError("Expected satellite stored energy to increase");
+        }
+        int extracted = OrbitalReceiverBlockEntity.extractStoredOrbitalEnergy(savedData, 128);
+        if (extracted != Math.min(128, Config.orbitalEnergyStorageTransferFePerTick)) {
+            throw new AssertionError("Expected receiver path to extract orbital storage FE, got " + extracted);
+        }
+        if (storageSatellite.storedEnergy() != stored - extracted) {
+            throw new AssertionError("Expected satellite stored energy to decrease after extraction");
+        }
+
+        CompoundTag savedTag = storageSatellite.save();
+        SatelliteMiningMissionState loaded = SatelliteMiningMissionState.load(savedTag);
+        if (!loaded.isEnergyStorage()) {
+            throw new AssertionError("Expected loaded satellite to remain energy storage");
+        }
+        if (loaded.storedEnergy() != storageSatellite.storedEnergy() || loaded.energyCapacity() != storageSatellite.energyCapacity()) {
+            throw new AssertionError("Expected energy storage satellite to persist FE buffer and capacity");
+        }
+        helper.succeed();
+    }
+
 }

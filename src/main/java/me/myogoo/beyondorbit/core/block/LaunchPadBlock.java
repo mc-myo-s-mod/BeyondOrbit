@@ -40,6 +40,13 @@ public class LaunchPadBlock extends Block {
             }
             return ItemInteractionResult.sidedSuccess(true);
         }
+        if (stack.is(BeyondOrbitContent.ORBITAL_ENERGY_STORAGE_SATELLITE.get())) {
+            if (!level.isClientSide()) {
+                boolean launched = SatelliteUplinkService.launchEnergyStorageSatelliteFromPad(level, pos, player, stack);
+                return launched ? ItemInteractionResult.SUCCESS : ItemInteractionResult.FAIL;
+            }
+            return ItemInteractionResult.sidedSuccess(true);
+        }
         if (stack.is(BeyondOrbitContent.BASIC_SATELLITE.get())) {
             if (!level.isClientSide()) {
                 boolean launched = SatelliteUplinkService.launchSatelliteFromPad(level, pos, player, stack);

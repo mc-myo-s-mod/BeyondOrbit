@@ -35,6 +35,8 @@ public final class SatelliteMiningMissionState {
     private static final String TICKS_PER_EXTRACTION_TAG = "ticks_per_extraction";
     private static final String ROLLS_PER_EXTRACTION_TAG = "rolls_per_extraction";
     private static final String COMPLETED_EXTRACTIONS_TAG = "completed_extractions";
+    private static final String STORED_ENERGY_TAG = "stored_energy";
+    private static final String ENERGY_CAPACITY_TAG = "energy_capacity";
     private static final String TOTAL_EXTRACTED_TAG = "total_extracted";
     private static final String EQUIPPED_MODULES_TAG = "equipped_modules";
     private static final String MODULE_TYPE_TAG = "type";
@@ -44,7 +46,8 @@ public final class SatelliteMiningMissionState {
 
     public enum SatelliteKind {
         MINING("mining"),
-        LOW_ORBIT_SOLAR("low_orbit_solar");
+        LOW_ORBIT_SOLAR("low_orbit_solar"),
+        ENERGY_STORAGE("energy_storage");
 
         private final String serializedName;
 
@@ -106,6 +109,8 @@ public final class SatelliteMiningMissionState {
     private int ticksPerExtraction = 200;
     private int rollsPerExtraction = 1;
     private long completedExtractions;
+    private int storedEnergy;
+    private int energyCapacity;
     private final Map<ResourceLocation, Long> totalExtracted = new LinkedHashMap<>();
     private final EnumMap<OrbitalModuleType, OrbitalModuleTier> equippedModules = new EnumMap<>(OrbitalModuleType.class);
 
@@ -151,7 +156,13 @@ public final class SatelliteMiningMissionState {
         } else if (state.isLowOrbitSolar()) {
             state.orbitDistanceKm = Math.max(0, Config.lowOrbitSolarDistanceKm);
         }
-        state.active = state.missionPhase == MissionPhase.ACTIVE && (state.active || state.isLowOrbitSolar());
+        state.active = state.missionPhase == MissionPhase.ACTIVE && (state.active || state.isLowOrbitSolar() || state.isEnergyStorage());
+        state.storedEnergy = Math.max(0, tag.getInt(STORED_ENERGY_TAG));
+        state.energyCapacity = Math.max(0, tag.getInt(ENERGY_CAPACITY_TAG));
+        if (state.isEnergyStorage() && state.energyCapacity <= 0) {
+            state.energyCapacity = Math.max(0, Config.orbitalEnergyStorageCapacity);
+        }
+        state.storedEnergy = Math.min(state.storedEnergy, state.energyCapacity);
         state.ticksUntilNextExtraction = Math.max(0, tag.getInt(TICKS_UNTIL_NEXT_EXTRACTION_TAG));
         state.ticksPerExtraction = Math.max(1, tag.getInt(TICKS_PER_EXTRACTION_TAG));
         state.rollsPerExtraction = Math.max(1, tag.getInt(ROLLS_PER_EXTRACTION_TAG));
@@ -196,6 +207,8 @@ public final class SatelliteMiningMissionState {
         tag.putInt(TICKS_PER_EXTRACTION_TAG, ticksPerExtraction);
         tag.putInt(ROLLS_PER_EXTRACTION_TAG, rollsPerExtraction);
         tag.putLong(COMPLETED_EXTRACTIONS_TAG, completedExtractions);
+        tag.putInt(STORED_ENERGY_TAG, storedEnergy);
+        tag.putInt(ENERGY_CAPACITY_TAG, energyCapacity);
 
         ListTag totals = new ListTag();
         totalExtracted.forEach((id, amount) -> {
@@ -294,6 +307,42 @@ public final class SatelliteMiningMissionState {
         this.ticksUntilNextExtraction = 0;
     }
 
+    public void markEnergyStorage(int deploymentTicks, int energyCapacity) {
+        this.kind = SatelliteKind.ENERGY_STORAGE;
+        this.targetBody = null;
+        this.solarPanelTier = SolarPanelTier.BASIC;
+        this.orbitDistanceKm = 0;
+        this.energyCapacity = Math.max(0, energyCapacity);
+        this.storedEnergy = Math.min(this.storedEnergy, this.energyCapacity);
+        this.phaseTicksRemaining = Math.max(0, deploymentTicks);
+        this.transitTicks = 0;
+        this.missionPhase = this.phaseTicksRemaining > 0 ? MissionPhase.DEPLOYING : MissionPhase.ACTIVE;
+        this.active = this.missionPhase == MissionPhase.ACTIVE;
+        this.ticksUntilNextExtraction = 0;
+    }
+
+    public int receiveEnergy(int amount, int maxTransfer) {
+        if (!isEnergyStorage() || missionPhase != MissionPhase.ACTIVE || energyCapacity <= 0 || amount <= 0 || maxTransfer <= 0) {
+            return 0;
+        }
+        int accepted = Math.min(Math.min(amount, maxTransfer), energyCapacity - storedEnergy);
+        if (accepted > 0) {
+            storedEnergy += accepted;
+        }
+        return accepted;
+    }
+
+    public int extractEnergy(int amount, int maxTransfer) {
+        if (!isEnergyStorage() || missionPhase != MissionPhase.ACTIVE || amount <= 0 || maxTransfer <= 0) {
+            return 0;
+        }
+        int extracted = Math.min(Math.min(amount, maxTransfer), storedEnergy);
+        if (extracted > 0) {
+            storedEnergy -= extracted;
+        }
+        return extracted;
+    }
+
     public boolean advanceMissionPhase() {
         if (missionPhase == MissionPhase.ACTIVE || missionPhase == MissionPhase.IDLE) {
             return false;
@@ -318,6 +367,10 @@ public final class SatelliteMiningMissionState {
 
     public boolean isLowOrbitSolar() {
         return kind == SatelliteKind.LOW_ORBIT_SOLAR;
+    }
+
+    public boolean isEnergyStorage() {
+        return kind == SatelliteKind.ENERGY_STORAGE;
     }
 
     public SatelliteKind kind() {
@@ -455,6 +508,14 @@ public final class SatelliteMiningMissionState {
 
     public long completedExtractions() {
         return completedExtractions;
+    }
+
+    public int storedEnergy() {
+        return storedEnergy;
+    }
+
+    public int energyCapacity() {
+        return energyCapacity;
     }
 
     public Map<ResourceLocation, Long> drainTotalExtracted() {
