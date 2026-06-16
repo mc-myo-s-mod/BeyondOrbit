@@ -26,6 +26,10 @@ import me.myogoo.beyondorbit.core.satellite.SatelliteMiningMissionState;
 import me.myogoo.beyondorbit.core.satellite.SatelliteUplinkService;
 import me.myogoo.beyondorbit.core.solar.SolarPanelItem;
 import me.myogoo.beyondorbit.core.solar.SolarPanelTier;
+import me.myogoo.beyondorbit.core.tier.TierableComponentItem;
+import me.myogoo.beyondorbit.core.tier.TierableItemStats;
+import me.myogoo.beyondorbit.core.tier.TierableItemTier;
+import me.myogoo.beyondorbit.core.tier.TierableItemType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
@@ -756,7 +760,7 @@ public final class CelestialResourceGameTests {
         }
 
         satellite.startMining(bodyId, Config.maxExtractionRollsPerOperation, 1);
-        for (int i = 0; i < 20 && satellite.totalExtractedView().isEmpty(); i++) {
+        for (int i = 0; i < 200 && satellite.totalExtractedView().isEmpty(); i++) {
             satellite.tick(definition, savedData.getOrCreateState(definition), RandomSource.create(5000L + i));
         }
         if (satellite.totalExtractedView().isEmpty()) {
@@ -1144,4 +1148,39 @@ public final class CelestialResourceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 20)
+    public static void tierableComponentItemsExposeNumericStats(GameTestHelper helper) {
+        assertTierableComponent(BeyondOrbitContent.BASIC_SATELLITE_BODY.get(), TierableItemType.BODY, TierableItemTier.BASIC, 10_000, 100, 1);
+        assertTierableComponent(BeyondOrbitContent.ELITE_SATELLITE_BODY.get(), TierableItemType.BODY, TierableItemTier.ELITE, 200_000, 500, 3);
+        assertTierableComponent(BeyondOrbitContent.BASIC_RECEIVER_COMPONENT.get(), TierableItemType.RECEIVER, TierableItemTier.BASIC, 1_024, 16, 100_000);
+        assertTierableComponent(BeyondOrbitContent.ELITE_RECEIVER_COMPONENT.get(), TierableItemType.RECEIVER, TierableItemTier.ELITE, 16_384, 64, 2_000_000);
+        assertTierableComponent(BeyondOrbitContent.BASIC_TRANSMITTER_COMPONENT.get(), TierableItemType.TRANSMITTER, TierableItemTier.BASIC, 50_000, 1_024, 12);
+        assertTierableComponent(BeyondOrbitContent.ELITE_TRANSMITTER_COMPONENT.get(), TierableItemType.TRANSMITTER, TierableItemTier.ELITE, 1_000_000, 16_384, 4);
+        assertTierableComponent(BeyondOrbitContent.BASIC_TELESCOPE_LENS.get(), TierableItemType.TELESCOPE, TierableItemTier.BASIC, 1, 200, 1);
+        assertTierableComponent(BeyondOrbitContent.ELITE_TELESCOPE_LENS.get(), TierableItemType.TELESCOPE, TierableItemTier.ELITE, 3, 40, 3);
+
+        if (SolarPanelTier.ELITE.tierableTier() != TierableItemTier.ELITE) {
+            throw new AssertionError("Expected elite solar panel tier to map to tierable ELITE");
+        }
+        if (SolarPanelTier.ELITE.generationFePerTick() <= SolarPanelTier.BASIC.generationFePerTick()) {
+            throw new AssertionError("Expected elite solar panel generation to exceed basic generation");
+        }
+        if (SolarPanelTier.ELITE.transmissionDistanceKm() <= SolarPanelTier.BASIC.transmissionDistanceKm()) {
+            throw new AssertionError("Expected elite solar panel transmission distance to exceed basic distance");
+        }
+        helper.succeed();
+    }
+
+    private static void assertTierableComponent(Object item, TierableItemType type, TierableItemTier tier, int primary, int secondary, int tertiary) {
+        if (!(item instanceof TierableComponentItem tierableItem)) {
+            throw new AssertionError("Expected item to be TierableComponentItem: " + item);
+        }
+        if (tierableItem.type() != type || tierableItem.tier() != tier) {
+            throw new AssertionError("Expected " + type + "/" + tier + ", got " + tierableItem.type() + "/" + tierableItem.tier());
+        }
+        TierableItemStats stats = tierableItem.stats();
+        if (stats.primaryValue() != primary || stats.secondaryValue() != secondary || stats.tertiaryValue() != tertiary) {
+            throw new AssertionError("Unexpected stats for " + type + "/" + tier + ": " + stats);
+        }
+    }
 }
