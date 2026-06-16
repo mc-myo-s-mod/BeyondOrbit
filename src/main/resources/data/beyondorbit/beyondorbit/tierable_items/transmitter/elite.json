@@ -1,0 +1,7 @@
+{
+  "type": "transmitter",
+  "tier": "elite",
+  "primary": 1000000,
+  "secondary": 16384,
+  "tertiary": 4
+}

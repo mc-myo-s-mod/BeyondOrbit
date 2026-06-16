@@ -1,6 +1,7 @@
 package me.myogoo.beyondorbit.core.solar;
 
 import me.myogoo.beyondorbit.core.Config;
+import me.myogoo.beyondorbit.core.tier.TierableItemTier;
 import net.minecraft.network.chat.Component;
 
 public enum SolarPanelTier {
@@ -33,6 +34,26 @@ public enum SolarPanelTier {
             case BASIC -> Config.orbitalReceiverBasicSolarPanelOutputPercent;
             case ADVANCED -> Config.orbitalReceiverAdvancedSolarPanelOutputPercent;
             case ELITE -> Config.orbitalReceiverEliteSolarPanelOutputPercent;
+        };
+    }
+
+    public TierableItemTier tierableTier() {
+        return switch (this) {
+            case BASIC -> TierableItemTier.BASIC;
+            case ADVANCED -> TierableItemTier.ADVANCED;
+            case ELITE -> TierableItemTier.ELITE;
+        };
+    }
+
+    public int generationFePerTick() {
+        return Math.max(0, Config.orbitalReceiverSolarFePerTick * outputPercent() / 100);
+    }
+
+    public int transmissionDistanceKm() {
+        return switch (this) {
+            case BASIC -> Config.lowOrbitSolarDistanceKm;
+            case ADVANCED -> Config.lowOrbitSolarDistanceKm * 2;
+            case ELITE -> Config.lowOrbitSolarDistanceKm * 4;
         };
     }
 

@@ -1,0 +1,7 @@
+{
+  "type": "receiver",
+  "tier": "advanced",
+  "primary": 4096,
+  "secondary": 32,
+  "tertiary": 500000
+}
