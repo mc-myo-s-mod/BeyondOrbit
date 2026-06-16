@@ -1,5 +1,6 @@
 package me.myogoo.beyondorbit.core.satellite;
 
+import me.myogoo.beyondorbit.core.Config;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyDefinition;
 import me.myogoo.beyondorbit.core.celestial.CelestialBodyState;
 import me.myogoo.beyondorbit.core.celestial.CelestialResourceExtractor;
@@ -145,7 +146,11 @@ public final class SatelliteMiningMissionState {
                 state.solarPanelTier = tier;
             }
         }
-        state.orbitDistanceKm = Math.max(0, tag.getInt(ORBIT_DISTANCE_KM_TAG));
+        if (tag.contains(ORBIT_DISTANCE_KM_TAG, Tag.TAG_INT)) {
+            state.orbitDistanceKm = Math.max(0, tag.getInt(ORBIT_DISTANCE_KM_TAG));
+        } else if (state.isLowOrbitSolar()) {
+            state.orbitDistanceKm = Math.max(0, Config.lowOrbitSolarDistanceKm);
+        }
         state.active = state.missionPhase == MissionPhase.ACTIVE && (state.active || state.isLowOrbitSolar());
         state.ticksUntilNextExtraction = Math.max(0, tag.getInt(TICKS_UNTIL_NEXT_EXTRACTION_TAG));
         state.ticksPerExtraction = Math.max(1, tag.getInt(TICKS_PER_EXTRACTION_TAG));
@@ -231,7 +236,9 @@ public final class SatelliteMiningMissionState {
     public void startLaunchPadMining(ResourceLocation targetBody, int rollsPerExtraction, int ticksPerExtraction, int launchTicks, int transitTicks) {
         this.kind = SatelliteKind.MINING;
         this.targetBody = targetBody;
-        updateMiningProfile(rollsPerExtraction, ticksPerExtraction);
+        this.rollsPerExtraction = Math.max(1, rollsPerExtraction);
+        this.ticksPerExtraction = Math.max(1, ticksPerExtraction);
+        this.ticksUntilNextExtraction = this.ticksPerExtraction;
         this.transitTicks = Math.max(0, transitTicks);
         int safeLaunchTicks = Math.max(0, launchTicks);
         if (safeLaunchTicks > 0) {
@@ -322,6 +329,13 @@ public final class SatelliteMiningMissionState {
             return null;
         }
         return equippedModules.put(type, tier);
+    }
+
+    public void replaceEquippedModules(OrbitalModuleTier miningTier, OrbitalModuleTier speedTier, OrbitalModuleTier efficiencyTier) {
+        equippedModules.clear();
+        equipModule(OrbitalModuleType.MINING, miningTier);
+        equipModule(OrbitalModuleType.SPEED, speedTier);
+        equipModule(OrbitalModuleType.EFFICIENCY, efficiencyTier);
     }
 
     public OrbitalModuleTier equippedModuleTier(OrbitalModuleType type) {

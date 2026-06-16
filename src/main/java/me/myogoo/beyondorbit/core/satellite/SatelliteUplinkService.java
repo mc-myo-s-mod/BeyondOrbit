@@ -148,13 +148,7 @@ public final class SatelliteUplinkService {
         int launchTicks = launchPadLaunchTicks(speedTier);
         int transitTicks = launchPadTransitTicks(definition, speedTier);
         satellite.startLaunchPadMining(definition.id(), rolls, intervalTicks, launchTicks, transitTicks);
-        satellite.equipModule(OrbitalModuleType.MINING, miningTier);
-        if (speedTier != null) {
-            satellite.equipModule(OrbitalModuleType.SPEED, speedTier);
-        }
-        if (efficiencyTier != null) {
-            satellite.equipModule(OrbitalModuleType.EFFICIENCY, efficiencyTier);
-        }
+        satellite.replaceEquippedModules(miningTier, speedTier, efficiencyTier);
         applyEquippedModulesToMission(satellite, Config.launchPadRollsPerExtraction, Config.launchPadTicksPerExtraction);
         data.setDirty();
 
@@ -181,7 +175,7 @@ public final class SatelliteUplinkService {
                     "message.beyondorbit.launch_pad.solar_already_deployed",
                     satelliteId.toString(),
                     data.lowOrbitSolarSatelliteCount(),
-                    OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite()
+                    OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite(existingSatellite)
             ));
             return false;
         }
@@ -210,7 +204,7 @@ public final class SatelliteUplinkService {
                 "message.beyondorbit.launch_pad.solar_launched",
                 satelliteId.toString(),
                 data.lowOrbitSolarSatelliteCount(),
-                OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite()
+                OrbitalReceiverBlockEntity.solarOutputPerActiveSatellite(satellite)
         ));
         return true;
     }

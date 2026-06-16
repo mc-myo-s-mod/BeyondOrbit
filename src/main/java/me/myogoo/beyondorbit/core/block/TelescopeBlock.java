@@ -43,15 +43,23 @@ public class TelescopeBlock extends Block {
         }
 
         BeyondOrbitSavedData savedData = BeyondOrbitSavedData.get(serverLevel.getServer());
-        Optional<CelestialBodyDefinition> nextBody = savedData.nextUndiscoveredCelestialBody();
-        if (nextBody.isPresent()) {
-            ResourceLocation bodyId = nextBody.get().id();
-            savedData.discoverCelestialBody(bodyId);
-            player.sendSystemMessage(Component.translatable("message.beyondorbit.telescope.discovered", bodyId.toString()).withStyle(ChatFormatting.AQUA));
+        Optional<ResourceLocation> discoveredBody = observe(savedData);
+        if (discoveredBody.isPresent()) {
+            player.sendSystemMessage(Component.translatable("message.beyondorbit.telescope.discovered", discoveredBody.get().toString()).withStyle(ChatFormatting.AQUA));
             return;
         }
 
         int discovered = savedData.discoveredCelestialBodiesView().size();
         player.sendSystemMessage(Component.translatable("message.beyondorbit.telescope.all_known", discovered).withStyle(ChatFormatting.GRAY));
+    }
+
+    public static Optional<ResourceLocation> observe(BeyondOrbitSavedData savedData) {
+        Optional<CelestialBodyDefinition> nextBody = savedData.nextUndiscoveredCelestialBody();
+        if (nextBody.isEmpty()) {
+            return Optional.empty();
+        }
+        ResourceLocation bodyId = nextBody.get().id();
+        savedData.discoverCelestialBody(bodyId);
+        return Optional.of(bodyId);
     }
 }
